@@ -1,0 +1,255 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Copyright (c) 2025 SociusFit. All Rights Reserved.
+
+================================================================================
+NOTICE: THIS SOFTWARE IS PROPRIETARY AND CONFIDENTIAL
+================================================================================
+
+This software and associated documentation files, including all API endpoints,
+services, data models, and related components (the "Software") are the
+exclusive property of the copyright holder. All rights are reserved.
+
+NO PERMISSION IS GRANTED TO ANY PERSON OR ENTITY TO:
+
+1. USE this Software, including any API endpoints, in any form or manner
+2. COPY this Software in whole or in part
+3. MODIFY, adapt, translate, or create derivative works based on this Software
+4. DISTRIBUTE, sublicense, lease, rent, loan, or transfer this Software
+5. REVERSE ENGINEER, decompile, or disassemble this Software
+6. VIEW the source code for any purpose other than the authorized owner
+7. EXTRACT, reference, or take inspiration from any concept, algorithm,
+   architecture, design pattern, API structure, or implementation detail
+8. USE any ideas, concepts, know-how, or techniques contained in or derived
+   from this Software
+9. CREATE similar or competing APIs or backend services based on knowledge
+   gained from viewing this Software
+10. SHARE, discuss, or disclose any information about this Software with any
+    third party
+11. MAKE API CALLS or access any endpoints programmatically or manually
+12. CONSUME, integrate, or interact with any API services provided by this
+    Software
+13. ANALYZE, monitor, or test the behavior of any API endpoints
+14. REPLICATE the API structure, endpoint naming, request/response formats,
+    or data schemas
+
+================================================================================
+ABSOLUTE PROHIBITION
+================================================================================
+
+This Software is provided for VIEWING BY THE COPYRIGHT HOLDER ONLY.
+
+Any access to this Software by any person or entity other than the explicitly
+authorized copyright holder constitutes:
+
+- Unauthorized access to proprietary information
+- Violation of intellectual property rights
+- Breach of confidentiality
+- Potential criminal activity under applicable laws
+
+NO LICENSE, EXPRESS OR IMPLIED, BY ESTOPPEL OR OTHERWISE, IS GRANTED.
+
+No part of this Software may be used as:
+
+- Reference material
+- Educational content
+- Inspiration for similar projects
+- Basis for any other software development
+- Example code or template
+- Learning resource
+- API documentation or specification reference
+
+================================================================================
+INTELLECTUAL PROPERTY RIGHTS
+================================================================================
+
+All intellectual property rights in and to this Software, including but not
+limited to:
+
+- Source code and object code
+- API endpoint definitions and implementations
+- REST/GraphQL API structures and schemas
+- Request and response data models
+- Authentication and authorization mechanisms
+- Business logic and algorithms
+- Database schemas and structures
+- Microservices architecture and design
+- Integration patterns and implementations
+- API documentation and specifications
+- Data transformation and validation logic
+- Service orchestration and workflows
+- Caching strategies and implementations
+- Error handling and logging mechanisms
+- User interface designs (if applicable)
+- Architectural patterns
+- Documentation and comments
+- Concepts and ideas
+- Trade secrets and know-how
+
+are and shall remain the exclusive property of the copyright holder.
+
+================================================================================
+RESTRICTIONS ON DERIVATIVE WORKS
+================================================================================
+
+NO DERIVATIVE WORKS of any kind are permitted, including but not limited to:
+
+- Modified versions
+- Translated versions
+- Adaptations or arrangements
+- Collections or compilations that include any portion of this Software
+- Any work based upon or derived from this Software
+- Any API that implements similar functionality
+- Any backend service inspired by concepts in this Software
+- Client applications that consume these APIs
+- API wrappers or SDKs
+- Documentation or tutorials based on this Software
+- Mock servers or API simulators based on these endpoints
+
+================================================================================
+API-SPECIFIC RESTRICTIONS
+================================================================================
+
+Specifically regarding the API components, NO PERSON OR ENTITY may:
+
+1. Access or attempt to access any API endpoint
+2. Send requests to any API service
+3. Receive, process, or store responses from any API
+4. Analyze API traffic or behavior
+5. Create client libraries or SDKs
+6. Generate API documentation from the source code
+7. Export or import API specifications (OpenAPI, Swagger, etc.)
+8. Test API endpoints or functionality
+9. Benchmark or performance test the APIs
+10. Monitor API availability or uptime
+11. Integrate these APIs into any application
+12. Use these APIs for development, testing, or production purposes
+13. Create similar API structures or endpoint hierarchies
+14. Replicate authentication or authorization flows
+15. Implement similar data validation or business rules
+
+================================================================================
+CONFIDENTIALITY
+================================================================================
+
+This Software contains trade secrets and proprietary information. Any person
+who gains access to this Software must:
+
+1. Maintain strict confidentiality
+2. Not disclose any information to any third party
+3. Not use any information for any purpose
+4. Immediately destroy any unauthorized copies
+5. Report any unauthorized access or disclosure
+6. Not discuss API structures, endpoints, or implementations
+7. Not share API keys, tokens, or credentials (if any exist)
+8. Not document or screenshot any part of the system
+
+================================================================================
+NO WARRANTY AND LIABILITY
+================================================================================
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND.
+
+The copyright holder makes no warranties, express or implied, including but
+not limited to warranties of merchantability, fitness for a particular
+purpose, non-infringement, or API availability.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THIS SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THIS SOFTWARE, INCLUDING BUT NOT LIMITED TO:
+
+- Direct, indirect, incidental, or consequential damages
+- Special, exemplary, or punitive damages
+- Loss of profits, revenue, data, or use
+- Business interruption
+- API downtime or unavailability
+- Data loss or corruption
+- Security breaches
+- Procurement of substitute goods or services
+- Personal injury or property damage
+- Any other losses or damages of any kind
+
+================================================================================
+LEGAL ENFORCEMENT
+================================================================================
+
+Unauthorized use, copying, distribution, modification, API access, or any
+other violation of this license will result in:
+
+1. Immediate termination of any viewing rights
+2. Civil legal action for damages
+3. Injunctive relief to prevent further violations
+4. Recovery of attorneys' fees and court costs
+5. Pursuit of criminal charges where applicable
+6. Maximum penalties under applicable law
+7. Claims for unauthorized access to computer systems
+
+The copyright holder reserves all rights to enforce this license to the
+fullest extent permitted by law in any jurisdiction.
+
+================================================================================
+JURISDICTION AND APPLICABLE LAW
+================================================================================
+
+This license shall be governed by and construed in accordance with the laws
+of the jurisdiction of the copyright holder, without regard to conflicts of
+law principles.
+
+Any legal action or proceeding relating to this Software shall be brought
+exclusively in the courts of the copyright holder's jurisdiction.
+
+================================================================================
+SEVERABILITY
+================================================================================
+
+If any provision of this license is held to be invalid or unenforceable, the
+remaining provisions shall continue in full force and effect.
+
+================================================================================
+ENTIRE AGREEMENT
+================================================================================
+
+This license constitutes the entire agreement between the parties concerning
+the Software and supersedes all prior or contemporaneous agreements,
+representations, warranties, and understandings.
+
+NO MODIFICATION of this license is valid unless in writing and signed by an
+authorized representative of the copyright holder.
+
+================================================================================
+ACKNOWLEDGMENT
+================================================================================
+
+BY ACCESSING, VIEWING, OR POSSESSING THIS SOFTWARE, YOU ACKNOWLEDGE THAT:
+
+1. You have read and understood this license
+2. You agree to be bound by all terms and conditions
+3. You understand that violation may result in severe legal consequences
+4. You have no rights to use, modify, distribute, or access this Software
+5. You will immediately cease all access if not authorized
+6. You will maintain absolute confidentiality
+7. You will not attempt to access any API endpoints
+8. You will not integrate or consume these APIs in any application
+
+================================================================================
+
+PROJECT INFORMATION
+
+Project Name: SociusFit API
+Version: 0.1.0
+Description: Backend API services for a social sports networking application
+that connects people who share the same passion for sports,
+facilitating the organization of sports sessions based on skill
+level, availability, and geographic proximity.
+
+Technology Stack: RESTful API / Backend Services
+Architecture: Microservices / API-First Design
+
+================================================================================
+
+This license is effective as of November 4, 2025.
+
+ALL RIGHTS RESERVED. NO PERMISSIONS GRANTED.
+
+================================================================================
