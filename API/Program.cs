@@ -4,7 +4,7 @@ using Infrastructure;
 using Infrastructure.Data;
 using Infrastructure.Seeders;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
 using Serilog;
 using System.Reflection;
 
@@ -27,54 +27,24 @@ builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Configure Swagger/OpenAPI
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+// Configure OpenAPI
+builder.Services.AddOpenApi(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
     {
-        Version = "v1",
-        Title = "Sports Match API",
-        Description = "API for connecting people who want to play sports together",
-        Contact = new OpenApiContact
+        document.Info = new()
         {
-            Name = "Support",
-            Email = "support@sportsmatch.com"
-        }
-    });
-
-    // Add JWT authentication to Swagger
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
+            Title = "Sports Match API",
+            Version = "v1",
+            Description = "API for connecting people who want to play sports together",
+            Contact = new()
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
+                Name = "Support",
+                Email = "support@sportsmatch.com"
+            }
+        };
+        return Task.CompletedTask;
     });
-
-    // Include XML comments
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        options.IncludeXmlComments(xmlPath);
-    }
 });
 
 // Add CORS
@@ -116,11 +86,15 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Sports Match API v1");
-        options.RoutePrefix = string.Empty; // Swagger at root
+        options
+            .WithTitle("Sports Match API")
+            .WithTheme(ScalarTheme.Purple)
+            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+            .WithPreferredScheme("Bearer")
+            .WithApiKeyAuthentication(x => x.Token = "");
     });
 
     // Use permissive CORS in development
