@@ -14,11 +14,13 @@ public class RegisterUserCommandHandler(
     IUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher,
     ITokenGenerator tokenGenerator,
+    IJwtService jwtService,
     IEmailService emailService) : IRequestHandler<RegisterUserCommand, Result<AuthResponseDto>>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IPasswordHasher _passwordHasher = passwordHasher;
     private readonly ITokenGenerator _tokenGenerator = tokenGenerator;
+    private readonly IJwtService _jwtService = jwtService;
     private readonly IEmailService _emailService = emailService;
 
     public async Task<Result<AuthResponseDto>> Handle(
@@ -44,7 +46,27 @@ public class RegisterUserCommandHandler(
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Send verification email
+        // Generate JWT tokens
+        var accessToken = _jwtService.GenerateAccessToken(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName);
+
+        var refreshToken = _jwtService.GenerateRefreshToken();
+        var refreshTokenExpiration = _jwtService.GetRefreshTokenExpiration();
+
+        // Store refresh token
+        var refreshTokenEntity = new RefreshToken(
+            user.Id,
+            refreshToken,
+            refreshTokenExpiration,
+            request.IpAddress ?? "unknown");
+
+        await _unitOfWork.RefreshTokens.AddAsync(refreshTokenEntity, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Send verification email (don't fail if email fails)
         try
         {
             await _emailService.SendVerificationEmailAsync(
@@ -56,20 +78,14 @@ public class RegisterUserCommandHandler(
         catch (Exception)
         {
             // Log error but don't fail registration
-            // In production, you might want to queue this for retry
         }
-
-        // Create session (allow login even before email verification)
-        var sessionToken = _tokenGenerator.GenerateToken();
-        var sessionExpiresAt = DateTime.UtcNow.AddDays(7);
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Return response
         var response = new AuthResponseDto
         {
-            Token = sessionToken,
-            ExpiresAt = sessionExpiresAt,
+            Token = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresAt = _jwtService.GetAccessTokenExpiration(),
             User = new UserDto
             {
                 Id = user.Id,
@@ -86,6 +102,8 @@ public class RegisterUserCommandHandler(
             Message = "Registration successful! Please check your email to verify your account."
         };
 
-        return Result<AuthResponseDto>.SuccessResult(response, "User registered successfully. Please verify your email.");
+        return Result<AuthResponseDto>.SuccessResult(
+            response,
+            "User registered successfully. Please verify your email.");
     }
 }

@@ -56,6 +56,7 @@ public static class DependencyInjection
         // Domain Services
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ITokenGenerator, TokenGenerator>();
+        services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<ILocationService, LocationService>();
@@ -83,6 +84,7 @@ public static class DependencyInjection
         // Domain Services
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ITokenGenerator, TokenGenerator>();
+        services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<ILocationService, LocationService>();

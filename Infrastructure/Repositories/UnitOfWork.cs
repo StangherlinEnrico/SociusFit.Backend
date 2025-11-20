@@ -15,6 +15,7 @@ public class UnitOfWork : IUnitOfWork
 
     private IUserRepository? _users;
     private IAuditLogRepository? _auditLogs;
+    private IRefreshTokenRepository? _refreshTokens;
 
     public UnitOfWork(AppDbContext context)
     {
@@ -26,6 +27,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IAuditLogRepository AuditLogs =>
         _auditLogs ??= new AuditLogRepository(_context);
+
+    public IRefreshTokenRepository RefreshTokens =>
+        _refreshTokens ??= new RefreshTokenRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

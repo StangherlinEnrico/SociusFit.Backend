@@ -5,36 +5,53 @@ using Domain.Interfaces;
 using Domain.Interfaces.Services;
 using MediatR;
 
-namespace Application.Features.Users.Commands.Login;
+namespace Application.Features.Users.Commands.LoginOAuth;
 
 /// <summary>
-/// Handler for LoginCommand
+/// Handler for LoginOAuthCommand
 /// </summary>
-public class LoginCommandHandler(
+public class LoginOAuthCommandHandler(
     IUnitOfWork unitOfWork,
-    IPasswordHasher passwordHasher,
-    IJwtService jwtService) : IRequestHandler<LoginCommand, Result<AuthResponseDto>>
+    IOAuthService oAuthService,
+    IJwtService jwtService) : IRequestHandler<LoginOAuthCommand, Result<AuthResponseDto>>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly IPasswordHasher _passwordHasher = passwordHasher;
+    private readonly IOAuthService _oAuthService = oAuthService;
     private readonly IJwtService _jwtService = jwtService;
 
     public async Task<Result<AuthResponseDto>> Handle(
-        LoginCommand request,
+        LoginOAuthCommand request,
         CancellationToken cancellationToken)
     {
-        // Find user by email
-        var user = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
-        if (user == null)
+        // Validate OAuth token
+        var providerData = await _oAuthService.ValidateProviderTokenAsync(
+            request.Provider,
+            request.Token,
+            cancellationToken);
+
+        if (providerData == null)
         {
-            return Result<AuthResponseDto>.FailureResult("Invalid email or password");
+            return Result<AuthResponseDto>.FailureResult("Invalid OAuth token");
         }
 
-        // Verify password
-        if (string.IsNullOrEmpty(user.PasswordHash) ||
-            !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        // Find or create user
+        var user = await _unitOfWork.Users.GetByProviderAsync(
+            request.Provider,
+            providerData.Value.ProviderId,
+            cancellationToken);
+
+        if (user == null)
         {
-            return Result<AuthResponseDto>.FailureResult("Invalid email or password");
+            // Create new user
+            user = new User(
+                providerData.Value.FirstName,
+                providerData.Value.LastName,
+                providerData.Value.Email);
+            user.SetOAuthProvider(request.Provider, providerData.Value.ProviderId);
+            user.VerifyEmail(); // OAuth users are auto-verified
+
+            await _unitOfWork.Users.AddAsync(user, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         // Generate JWT tokens
@@ -76,12 +93,9 @@ public class LoginCommandHandler(
                 Longitude = user.Longitude,
                 MaxDistanceKm = user.MaxDistanceKm,
                 CreatedAt = user.CreatedAt
-            },
-            Message = !user.IsEmailVerified()
-                ? "Login successful. Please verify your email to access all features."
-                : null
+            }
         };
 
-        return Result<AuthResponseDto>.SuccessResult(response, "Login successful");
+        return Result<AuthResponseDto>.SuccessResult(response, "OAuth login successful");
     }
 }

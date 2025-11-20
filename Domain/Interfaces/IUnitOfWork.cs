@@ -9,6 +9,7 @@ public interface IUnitOfWork : IDisposable
 {
     IUserRepository Users { get; }
     IAuditLogRepository AuditLogs { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

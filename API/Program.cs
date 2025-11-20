@@ -1,11 +1,14 @@
+using System.Text;
 using API.Middleware;
 using Application;
 using Infrastructure;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Serilog;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +29,61 @@ builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Configure JWT Authentication
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("JWT SecretKey not configured");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SociusFit";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SociusFit-Mobile";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.RequireHttpsMetadata = false; // Set to true in production with HTTPS
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero // Remove delay of token when expire
+    };
+
+    // Configure token extraction for mobile apps
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            // Allow token from query string for mobile deep links
+            var token = context.Request.Query["access_token"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(token))
+            {
+                context.Token = token;
+            }
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+            {
+                context.Response.Headers.Append("Token-Expired", "true");
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// Configure OpenAPI
 // Configure OpenAPI
 builder.Services.AddOpenApi(options =>
 {
@@ -33,15 +91,44 @@ builder.Services.AddOpenApi(options =>
     {
         document.Info = new()
         {
-            Title = "Sports Match API",
+            Title = "SociusFit API",
             Version = "v1",
-            Description = "API for connecting people who want to play sports together",
+            Description = "Backend API for SociusFit mobile app - Connect with people who share your passion for sports",
             Contact = new()
             {
                 Name = "Support",
-                Email = "support@sportsmatch.com"
+                Email = "support@sociusfit.com"
             }
         };
+
+        // Configurazione JWT Bearer
+        document.Components ??= new();
+        document.Components.SecuritySchemes ??= new Dictionary<string, OpenApiSecurityScheme>();
+
+        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Enter your JWT token in the format: Bearer {your token}"
+        };
+
+        // Applica security requirement globalmente
+        document.SecurityRequirements = new List<OpenApiSecurityRequirement>
+        {
+            new()
+            {
+                [new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                }] = Array.Empty<string>()
+            }
+        };
+
         return Task.CompletedTask;
     });
 });
@@ -59,7 +146,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Production", policy =>
     {
         var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-            ?? new[] { "https://yourdomain.com" };
+            ?? Array.Empty<string>();
 
         policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
@@ -80,6 +167,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
+// Add HttpContextAccessor for IP address retrieval
+builder.Services.AddHttpContextAccessor();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -89,11 +179,10 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options
-            .WithTitle("Sports Match API")
+            .WithTitle("SociusFit API")
             .WithTheme(ScalarTheme.Purple)
             .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-            .WithPreferredScheme("Bearer")
-            .WithApiKeyAuthentication(x => x.Token = "");
+            .WithPreferredScheme("Bearer");
     });
 
     // Use permissive CORS in development
@@ -114,6 +203,8 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 // Serilog request logging
 app.UseSerilogRequestLogging();
 
+// Authentication & Authorization - ORDER MATTERS!
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -130,9 +221,9 @@ using (var scope = app.Services.CreateScope())
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         // Apply migrations
-        //logger.LogInformation("Applying database migrations...");
-        //await context.Database.MigrateAsync();
-        //logger.LogInformation("Database migrations applied successfully");
+        logger.LogInformation("Applying database migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully");
     }
     catch (Exception ex)
     {
@@ -142,7 +233,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-Log.Information("Starting Sports Match API...");
+Log.Information("Starting SociusFit API...");
 
 try
 {
