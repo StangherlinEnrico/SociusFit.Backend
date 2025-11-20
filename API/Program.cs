@@ -2,7 +2,6 @@ using API.Middleware;
 using Application;
 using Infrastructure;
 using Infrastructure.Data;
-using Infrastructure.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
@@ -131,15 +130,9 @@ using (var scope = app.Services.CreateScope())
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         // Apply migrations
-        logger.LogInformation("Applying database migrations...");
-        await context.Database.MigrateAsync();
-        logger.LogInformation("Database migrations applied successfully");
-
-        // Seed database
-        logger.LogInformation("Seeding database...");
-        var seeder = new DatabaseSeeder(context, scope.ServiceProvider.GetRequiredService<ILogger<DatabaseSeeder>>());
-        await seeder.SeedAsync();
-        logger.LogInformation("Database seeding completed");
+        //logger.LogInformation("Applying database migrations...");
+        //await context.Database.MigrateAsync();
+        //logger.LogInformation("Database migrations applied successfully");
     }
     catch (Exception ex)
     {

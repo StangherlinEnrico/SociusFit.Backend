@@ -66,6 +66,14 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.MaxDistanceKm)
             .HasColumnName("max_distance_km");
 
+        // Email verification fields
+        builder.Property(u => u.EmailVerificationToken)
+            .HasColumnName("email_verification_token")
+            .HasMaxLength(255);
+
+        builder.Property(u => u.EmailVerificationTokenExpiresAt)
+            .HasColumnName("email_verification_token_expires_at");
+
         builder.Property(u => u.CreatedAt)
             .HasColumnName("created_at")
             .IsRequired();
@@ -82,6 +90,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique()
             .HasDatabaseName("IX_users_email");
 
+        builder.HasIndex(u => u.EmailVerificationToken)
+            .HasDatabaseName("IX_users_email_verification_token")
+            .HasFilter("[email_verification_token] IS NOT NULL");
+
         builder.HasIndex(u => new { u.Latitude, u.Longitude })
             .HasDatabaseName("IX_users_location");
 
@@ -89,25 +101,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasDatabaseName("IX_users_deleted_at");
 
         // Relationships
-        builder.HasMany(u => u.Sessions)
-            .WithOne(s => s.User)
-            .HasForeignKey(s => s.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(u => u.Consents)
-            .WithOne(c => c.User)
-            .HasForeignKey(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasMany(u => u.AuditLogs)
             .WithOne(a => a.User)
             .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasMany(u => u.UserSports)
-            .WithOne(us => us.User)
-            .HasForeignKey(us => us.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
 
         // Query filter for soft delete
         builder.HasQueryFilter(u => u.DeletedAt == null);

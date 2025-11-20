@@ -18,17 +18,4 @@ public interface IUserRepository : IRepository<User>
         decimal longitude,
         int maxDistanceKm,
         CancellationToken cancellationToken = default);
-
-    Task<IEnumerable<User>> GetUsersBySportAsync(int sportId, CancellationToken cancellationToken = default);
-
-    Task<IEnumerable<User>> GetUsersBySportAndLevelAsync(
-        int sportId,
-        int levelId,
-        CancellationToken cancellationToken = default);
-
-    Task<User?> GetByIdWithSportsAsync(int id, CancellationToken cancellationToken = default);
-
-    Task<User?> GetByIdWithSessionsAsync(int id, CancellationToken cancellationToken = default);
-
-    Task<User?> GetByIdWithConsentsAsync(int id, CancellationToken cancellationToken = default);
 }

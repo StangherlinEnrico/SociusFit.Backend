@@ -3,15 +3,13 @@ using Application.Features.Users.Commands.DeleteUser;
 using Application.Features.Users.Commands.Login;
 using Application.Features.Users.Commands.LoginOAuth;
 using Application.Features.Users.Commands.Register;
+using Application.Features.Users.Commands.ResendVerification;
 using Application.Features.Users.Commands.UpdateLocation;
 using Application.Features.Users.Commands.UpdateProfile;
+using Application.Features.Users.Commands.VerifyEmail;
 using Application.Features.Users.Queries.GetUser;
-using Application.Features.Users.Queries.GetUserWithSports;
-using Application.Features.Users.Queries.SearchNearby;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace API.Controllers;
 
@@ -36,8 +34,8 @@ public class UsersController : ControllerBase
     /// Register a new user
     /// </summary>
     /// <param name="dto">User registration data</param>
-    /// <returns>Authentication response with token</returns>
-    /// <response code="200">User registered successfully</response>
+    /// <returns>Authentication response with token and verification message</returns>
+    /// <response code="200">User registered successfully. Verification email sent.</response>
     /// <response code="400">Invalid input or email already exists</response>
     [HttpPost("register")]
     [ProducesResponseType(typeof(Application.Common.Models.Result<AuthResponseDto>), StatusCodes.Status200OK)]
@@ -60,7 +58,109 @@ public class UsersController : ControllerBase
             return BadRequest(result);
         }
 
-        _logger.LogInformation("User registered successfully: {Email}", dto.Email);
+        _logger.LogInformation("User registered successfully: {Email}. Verification email sent.", dto.Email);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Verify user email with token
+    /// </summary>
+    /// <param name="token">Email verification token</param>
+    /// <returns>Verification confirmation</returns>
+    /// <response code="200">Email verified successfully</response>
+    /// <response code="400">Invalid or expired token</response>
+    [HttpGet("verify-email")]
+    [ProducesResponseType(typeof(Application.Common.Models.Result<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+    {
+        var command = new VerifyEmailCommand { Token = token };
+        var result = await _mediator.Send(command);
+
+        if (!result.Success)
+        {
+            _logger.LogWarning("Email verification failed for token: {Token}", token);
+            return BadRequest(result);
+        }
+
+        _logger.LogInformation("Email verified successfully for token: {Token}", token);
+
+        // Return HTML page for better user experience
+        return Content($@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Verified - SociusFit</title>
+    <style>
+        body {{ 
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }}
+        .container {{ 
+            background: white; 
+            padding: 40px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+        }}
+        h1 {{ color: #667eea; margin-bottom: 20px; }}
+        p {{ color: #555; line-height: 1.6; margin-bottom: 30px; }}
+        .success-icon {{ font-size: 60px; margin-bottom: 20px; }}
+        .btn {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }}
+        .btn:hover {{ opacity: 0.9; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='success-icon'>✅</div>
+        <h1>Email Verified Successfully!</h1>
+        <p>{result.Message}</p>
+        <p>You can now close this window and return to the app to log in.</p>
+        <a href='#' class='btn' onclick='window.close(); return false;'>Close Window</a>
+    </div>
+</body>
+</html>", "text/html");
+    }
+
+    /// <summary>
+    /// Resend verification email
+    /// </summary>
+    /// <param name="dto">Email to resend verification to</param>
+    /// <returns>Confirmation message</returns>
+    /// <response code="200">Verification email sent</response>
+    /// <response code="400">Email already verified or other error</response>
+    [HttpPost("resend-verification")]
+    [ProducesResponseType(typeof(Application.Common.Models.Result<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto dto)
+    {
+        var command = new ResendVerificationEmailCommand { Email = dto.Email };
+        var result = await _mediator.Send(command);
+
+        if (!result.Success)
+        {
+            _logger.LogWarning("Resend verification failed for email: {Email}", dto.Email);
+            return BadRequest(result);
+        }
+
+        _logger.LogInformation("Verification email resent to: {Email}", dto.Email);
         return Ok(result);
     }
 
@@ -142,59 +242,6 @@ public class UsersController : ControllerBase
         if (!result.Success)
             return NotFound(result);
 
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Get user with their sports
-    /// </summary>
-    /// <param name="id">User ID</param>
-    /// <returns>User with sports details</returns>
-    /// <response code="200">User found</response>
-    /// <response code="404">User not found</response>
-    [HttpGet("{id}/sports")]
-    [ProducesResponseType(typeof(Application.Common.Models.Result<UserWithSportsDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUserWithSports(int id)
-    {
-        var query = new GetUserWithSportsQuery { UserId = id };
-        var result = await _mediator.Send(query);
-
-        if (!result.Success)
-            return NotFound(result);
-
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Search for users nearby based on location
-    /// </summary>
-    /// <param name="latitude">User's latitude</param>
-    /// <param name="longitude">User's longitude</param>
-    /// <param name="maxDistanceKm">Maximum distance in kilometers (default: 50)</param>
-    /// <param name="sportId">Filter by sport ID (optional)</param>
-    /// <param name="levelId">Filter by level ID (optional)</param>
-    /// <returns>List of nearby users</returns>
-    /// <response code="200">Search completed successfully</response>
-    [HttpGet("nearby")]
-    [ProducesResponseType(typeof(Application.Common.Models.Result<List<UserSearchDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> SearchNearby(
-        [FromQuery] decimal latitude,
-        [FromQuery] decimal longitude,
-        [FromQuery] int maxDistanceKm = 50,
-        [FromQuery] int? sportId = null,
-        [FromQuery] int? levelId = null)
-    {
-        var query = new SearchNearbyUsersQuery
-        {
-            Latitude = latitude,
-            Longitude = longitude,
-            MaxDistanceKm = maxDistanceKm,
-            SportId = sportId,
-            LevelId = levelId
-        };
-
-        var result = await _mediator.Send(query);
         return Ok(result);
     }
 

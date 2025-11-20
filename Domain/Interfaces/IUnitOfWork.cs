@@ -8,12 +8,7 @@ namespace Domain.Interfaces;
 public interface IUnitOfWork : IDisposable
 {
     IUserRepository Users { get; }
-    ISessionRepository Sessions { get; }
-    IUserConsentRepository UserConsents { get; }
     IAuditLogRepository AuditLogs { get; }
-    ISportRepository Sports { get; }
-    ILevelRepository Levels { get; }
-    IUserSportRepository UserSports { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

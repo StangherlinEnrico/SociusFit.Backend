@@ -59,13 +59,3 @@ public class AuthorizationException : DomainException
 {
     public AuthorizationException(string message) : base(message) { }
 }
-
-/// <summary>
-/// Exception thrown when a session is invalid or expired
-/// </summary>
-public class InvalidSessionException : DomainException
-{
-    public InvalidSessionException() : base("Session is invalid or expired.") { }
-
-    public InvalidSessionException(string message) : base(message) { }
-}

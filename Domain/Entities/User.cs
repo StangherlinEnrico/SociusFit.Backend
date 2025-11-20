@@ -17,20 +17,16 @@ public class User
     public decimal? Latitude { get; private set; }
     public decimal? Longitude { get; private set; }
     public int? MaxDistanceKm { get; private set; }
+
+    // Email verification tokens
+    public string? EmailVerificationToken { get; private set; }
+    public DateTime? EmailVerificationTokenExpiresAt { get; private set; }
+
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
     // Navigation properties
-    private readonly List<Session> _sessions = new();
-    public IReadOnlyCollection<Session> Sessions => _sessions.AsReadOnly();
-
-    private readonly List<UserConsent> _consents = new();
-    public IReadOnlyCollection<UserConsent> Consents => _consents.AsReadOnly();
-
-    private readonly List<UserSport> _userSports = new();
-    public IReadOnlyCollection<UserSport> UserSports => _userSports.AsReadOnly();
-
     private readonly List<AuditLog> _auditLogs = new();
     public IReadOnlyCollection<AuditLog> AuditLogs => _auditLogs.AsReadOnly();
 
@@ -94,7 +90,33 @@ public class User
     public void VerifyEmail()
     {
         EmailVerifiedAt = DateTime.UtcNow;
+        EmailVerificationToken = null;
+        EmailVerificationTokenExpiresAt = null;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetEmailVerificationToken(string token, DateTime expiresAt)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            throw new ArgumentException("Token cannot be empty", nameof(token));
+
+        if (expiresAt <= DateTime.UtcNow)
+            throw new ArgumentException("Expiration date must be in the future", nameof(expiresAt));
+
+        EmailVerificationToken = token;
+        EmailVerificationTokenExpiresAt = expiresAt;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public bool IsEmailVerificationTokenValid(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(EmailVerificationToken))
+            return false;
+
+        if (EmailVerificationTokenExpiresAt == null || EmailVerificationTokenExpiresAt <= DateTime.UtcNow)
+            return false;
+
+        return EmailVerificationToken == token;
     }
 
     public void SetLocation(decimal latitude, decimal longitude, int maxDistanceKm)

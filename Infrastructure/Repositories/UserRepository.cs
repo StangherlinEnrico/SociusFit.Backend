@@ -72,45 +72,4 @@ public class UserRepository : Repository<User>, IUserRepository
     {
         return degrees * Math.PI / 180;
     }
-
-    public async Task<IEnumerable<User>> GetUsersBySportAsync(int sportId, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .Where(u => u.UserSports.Any(us => us.SportId == sportId))
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<User>> GetUsersBySportAndLevelAsync(
-        int sportId,
-        int levelId,
-        CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .Where(u => u.UserSports.Any(us => us.SportId == sportId && us.LevelId == levelId))
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<User?> GetByIdWithSportsAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .Include(u => u.UserSports)
-                .ThenInclude(us => us.Sport)
-            .Include(u => u.UserSports)
-                .ThenInclude(us => us.Level)
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-    }
-
-    public async Task<User?> GetByIdWithSessionsAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .Include(u => u.Sessions)
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-    }
-
-    public async Task<User?> GetByIdWithConsentsAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .Include(u => u.Consents)
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-    }
 }

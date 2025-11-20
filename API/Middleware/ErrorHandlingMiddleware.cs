@@ -80,13 +80,6 @@ public class ErrorHandlingMiddleware
                 Message = authzException.Message,
                 Errors = new List<string>()
             },
-            InvalidSessionException sessionException => new
-            {
-                StatusCode = (int)HttpStatusCode.Unauthorized,
-                Success = false,
-                Message = sessionException.Message,
-                Errors = new List<string>()
-            },
             _ => new
             {
                 StatusCode = (int)HttpStatusCode.InternalServerError,

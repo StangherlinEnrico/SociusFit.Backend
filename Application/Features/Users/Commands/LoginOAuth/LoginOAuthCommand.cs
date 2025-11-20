@@ -73,9 +73,7 @@ public class LoginOAuthCommandHandler : IRequestHandler<LoginOAuthCommand, Resul
         // Create session
         var token = _tokenGenerator.GenerateToken();
         var expiresAt = DateTime.UtcNow.AddDays(7);
-        var session = new Session(user.Id, token, expiresAt);
 
-        await _unitOfWork.Sessions.AddAsync(session, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Return response
