@@ -13,10 +13,6 @@ public class User
     public string? PasswordHash { get; private set; }
     public string? Provider { get; private set; }
     public string? ProviderId { get; private set; }
-    public string? Location { get; private set; }
-    public decimal? Latitude { get; private set; }
-    public decimal? Longitude { get; private set; }
-    public int? MaxDistanceKm { get; private set; }
 
     // Email verification tokens
     public string? EmailVerificationToken { get; private set; }
@@ -51,7 +47,7 @@ public class User
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateProfile(string firstName, string lastName, string? location = null)
+    public void UpdateProfile(string firstName, string lastName)
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name cannot be empty", nameof(firstName));
@@ -61,7 +57,6 @@ public class User
 
         FirstName = firstName;
         LastName = lastName;
-        Location = location;
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -117,23 +112,6 @@ public class User
             return false;
 
         return EmailVerificationToken == token;
-    }
-
-    public void SetLocation(decimal latitude, decimal longitude, int maxDistanceKm)
-    {
-        if (latitude < -90 || latitude > 90)
-            throw new ArgumentException("Latitude must be between -90 and 90", nameof(latitude));
-
-        if (longitude < -180 || longitude > 180)
-            throw new ArgumentException("Longitude must be between -180 and 180", nameof(longitude));
-
-        if (maxDistanceKm <= 0)
-            throw new ArgumentException("Max distance must be positive", nameof(maxDistanceKm));
-
-        Latitude = latitude;
-        Longitude = longitude;
-        MaxDistanceKm = maxDistanceKm;
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public void SoftDelete()

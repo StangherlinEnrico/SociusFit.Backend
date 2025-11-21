@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251120132429_RefreshToken")]
-    partial class RefreshToken
+    [Migration("20251121102540_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -198,25 +198,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("last_name");
 
-                    b.Property<decimal?>("Latitude")
-                        .HasPrecision(10, 8)
-                        .HasColumnType("decimal(10,8)")
-                        .HasColumnName("latitude");
-
-                    b.Property<string>("Location")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("location");
-
-                    b.Property<decimal?>("Longitude")
-                        .HasPrecision(11, 8)
-                        .HasColumnType("decimal(11,8)")
-                        .HasColumnName("longitude");
-
-                    b.Property<int?>("MaxDistanceKm")
-                        .HasColumnType("int")
-                        .HasColumnName("max_distance_km");
-
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
@@ -248,9 +229,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("EmailVerificationToken")
                         .HasDatabaseName("IX_users_email_verification_token")
                         .HasFilter("[email_verification_token] IS NOT NULL");
-
-                    b.HasIndex("Latitude", "Longitude")
-                        .HasDatabaseName("IX_users_location");
 
                     b.ToTable("users", (string)null);
                 });

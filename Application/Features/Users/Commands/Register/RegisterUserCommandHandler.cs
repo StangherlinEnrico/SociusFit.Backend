@@ -93,10 +93,6 @@ public class RegisterUserCommandHandler(
                 LastName = user.LastName,
                 Email = user.Email,
                 IsEmailVerified = user.IsEmailVerified(),
-                Location = user.Location,
-                Latitude = user.Latitude,
-                Longitude = user.Longitude,
-                MaxDistanceKm = user.MaxDistanceKm,
                 CreatedAt = user.CreatedAt
             },
             Message = "Registration successful! Please check your email to verify your account."

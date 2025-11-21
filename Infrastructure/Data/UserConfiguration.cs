@@ -51,21 +51,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasColumnName("provider_id")
             .HasMaxLength(255);
 
-        builder.Property(u => u.Location)
-            .HasColumnName("location")
-            .HasMaxLength(255);
-
-        builder.Property(u => u.Latitude)
-            .HasColumnName("latitude")
-            .HasPrecision(10, 8);
-
-        builder.Property(u => u.Longitude)
-            .HasColumnName("longitude")
-            .HasPrecision(11, 8);
-
-        builder.Property(u => u.MaxDistanceKm)
-            .HasColumnName("max_distance_km");
-
         // Email verification fields
         builder.Property(u => u.EmailVerificationToken)
             .HasColumnName("email_verification_token")
@@ -93,9 +78,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.EmailVerificationToken)
             .HasDatabaseName("IX_users_email_verification_token")
             .HasFilter("[email_verification_token] IS NOT NULL");
-
-        builder.HasIndex(u => new { u.Latitude, u.Longitude })
-            .HasDatabaseName("IX_users_location");
 
         builder.HasIndex(u => u.DeletedAt)
             .HasDatabaseName("IX_users_deleted_at");

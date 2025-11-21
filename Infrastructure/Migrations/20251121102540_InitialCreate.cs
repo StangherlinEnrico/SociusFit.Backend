@@ -24,10 +24,6 @@ namespace Infrastructure.Migrations
                     password_hash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     provider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     provider_id = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    location = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    latitude = table.Column<decimal>(type: "decimal(10,8)", precision: 10, scale: 8, nullable: true),
-                    longitude = table.Column<decimal>(type: "decimal(11,8)", precision: 11, scale: 8, nullable: true),
-                    max_distance_km = table.Column<int>(type: "int", nullable: true),
                     email_verification_token = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     email_verification_token_expires_at = table.Column<DateTime>(type: "datetime2", nullable: true),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -65,6 +61,32 @@ namespace Infrastructure.Migrations
                         onDelete: ReferentialAction.SetNull);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "refresh_tokens",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    user_id = table.Column<int>(type: "int", nullable: false),
+                    token = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    expires_at = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    revoked_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    revoked_by_ip = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
+                    replaced_by_token = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    created_by_ip = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_refresh_tokens", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_refresh_tokens_users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_audit_logs_created_at",
                 table: "audit_logs",
@@ -86,6 +108,22 @@ namespace Infrastructure.Migrations
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_expires_at",
+                table: "refresh_tokens",
+                column: "expires_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_token",
+                table: "refresh_tokens",
+                column: "token",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_user_id",
+                table: "refresh_tokens",
+                column: "user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_users_deleted_at",
                 table: "users",
                 column: "deleted_at");
@@ -101,11 +139,6 @@ namespace Infrastructure.Migrations
                 table: "users",
                 column: "email_verification_token",
                 filter: "[email_verification_token] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_users_location",
-                table: "users",
-                columns: new[] { "latitude", "longitude" });
         }
 
         /// <inheritdoc />
@@ -113,6 +146,9 @@ namespace Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "audit_logs");
+
+            migrationBuilder.DropTable(
+                name: "refresh_tokens");
 
             migrationBuilder.DropTable(
                 name: "users");

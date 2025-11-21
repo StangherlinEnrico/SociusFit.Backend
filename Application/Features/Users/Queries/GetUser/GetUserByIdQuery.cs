@@ -2,7 +2,6 @@
 using Application.DTOs.Users;
 using AutoMapper;
 using Domain.Interfaces;
-using Domain.Interfaces.Services;
 using MediatR;
 
 namespace Application.Features.Users.Queries.GetUser;

@@ -88,10 +88,6 @@ public class LoginOAuthCommandHandler(
                 Email = user.Email,
                 IsEmailVerified = user.IsEmailVerified(),
                 Provider = user.Provider,
-                Location = user.Location,
-                Latitude = user.Latitude,
-                Longitude = user.Longitude,
-                MaxDistanceKm = user.MaxDistanceKm,
                 CreatedAt = user.CreatedAt
             }
         };

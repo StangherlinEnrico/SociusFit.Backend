@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using Application.DTOs.Users;
 using Application.Features.Users.Commands.DeleteUser;
-using Application.Features.Users.Commands.UpdateLocation;
 using Application.Features.Users.Commands.UpdateProfile;
 using Application.Features.Users.Queries.GetUser;
 using MediatR;
@@ -17,16 +16,10 @@ namespace API.Controllers;
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
 [Authorize] // All endpoints require authentication
-public class UsersController : ControllerBase
+public class UsersController(IMediator mediator, ILogger<UsersController> logger) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger<UsersController> _logger;
-
-    public UsersController(IMediator mediator, ILogger<UsersController> logger)
-    {
-        _mediator = mediator;
-        _logger = logger;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly ILogger<UsersController> _logger = logger;
 
     /// <summary>
     /// Get current authenticated user profile
@@ -95,8 +88,7 @@ public class UsersController : ControllerBase
         {
             UserId = userId.Value,
             FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Location = dto.Location
+            LastName = dto.LastName
         };
 
         var result = await _mediator.Send(command);
@@ -105,41 +97,6 @@ public class UsersController : ControllerBase
             return NotFound(result);
 
         _logger.LogInformation("Profile updated for user: {UserId}", userId.Value);
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Update current user location
-    /// </summary>
-    /// <param name="dto">Location update data</param>
-    /// <returns>Updated user</returns>
-    /// <response code="200">Location updated successfully</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="404">User not found</response>
-    [HttpPut("me/location")]
-    [ProducesResponseType(typeof(Application.Common.Models.Result<UserDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateLocation([FromBody] UpdateUserLocationDto dto)
-    {
-        var userId = GetUserIdFromClaims();
-        if (userId == null)
-            return Unauthorized();
-
-        var command = new UpdateUserLocationCommand
-        {
-            UserId = userId.Value,
-            Latitude = dto.Latitude,
-            Longitude = dto.Longitude,
-            MaxDistanceKm = dto.MaxDistanceKm
-        };
-
-        var result = await _mediator.Send(command);
-
-        if (!result.Success)
-            return NotFound(result);
-
-        _logger.LogInformation("Location updated for user: {UserId}", userId.Value);
         return Ok(result);
     }
 

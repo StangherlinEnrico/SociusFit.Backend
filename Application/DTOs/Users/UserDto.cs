@@ -12,9 +12,5 @@ public class UserDto
     public string Email { get; set; } = string.Empty;
     public bool IsEmailVerified { get; set; }
     public string? Provider { get; set; }
-    public string? Location { get; set; }
-    public decimal? Latitude { get; set; }
-    public decimal? Longitude { get; set; }
-    public int? MaxDistanceKm { get; set; }
     public DateTime CreatedAt { get; set; }
 }

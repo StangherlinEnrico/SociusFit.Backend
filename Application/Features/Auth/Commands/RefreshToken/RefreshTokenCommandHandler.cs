@@ -66,10 +66,6 @@ public class RefreshTokenCommandHandler(IUnitOfWork unitOfWork, IJwtService jwtS
                 Email = user.Email,
                 IsEmailVerified = user.IsEmailVerified(),
                 Provider = user.Provider,
-                Location = user.Location,
-                Latitude = user.Latitude,
-                Longitude = user.Longitude,
-                MaxDistanceKm = user.MaxDistanceKm,
                 CreatedAt = user.CreatedAt
             }
         };

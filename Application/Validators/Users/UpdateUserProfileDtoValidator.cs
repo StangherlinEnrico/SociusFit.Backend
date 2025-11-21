@@ -1,15 +1,15 @@
-﻿using Application.Features.Users.Commands.UpdateProfile;
+﻿using Application.DTOs.Users;
 using FluentValidation;
 
-namespace Application.Validators.Commands;
+namespace Application.Validators.Users;
 
-public class UpdateUserProfileCommandValidator : AbstractValidator<UpdateUserProfileCommand>
+/// <summary>
+/// Validator for UpdateUserProfileDto
+/// </summary>
+public class UpdateUserProfileDtoValidator : AbstractValidator<UpdateUserProfileDto>
 {
-    public UpdateUserProfileCommandValidator()
+    public UpdateUserProfileDtoValidator()
     {
-        RuleFor(x => x.UserId)
-            .GreaterThan(0).WithMessage("User ID must be greater than 0");
-
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("First name is required")
             .MaximumLength(100).WithMessage("First name cannot exceed 100 characters");

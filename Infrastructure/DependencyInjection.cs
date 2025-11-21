@@ -59,7 +59,6 @@ public static class DependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IAuditService, AuditService>();
-        services.AddScoped<ILocationService, LocationService>();
 
         // OAuth Service with HttpClient
         services.AddHttpClient<IOAuthService, OAuthService>();
@@ -87,7 +86,6 @@ public static class DependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IAuditService, AuditService>();
-        services.AddScoped<ILocationService, LocationService>();
 
         // OAuth Service with HttpClient
         services.AddHttpClient<IOAuthService, OAuthService>();
