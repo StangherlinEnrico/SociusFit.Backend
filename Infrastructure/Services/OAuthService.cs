@@ -1,9 +1,11 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Text.Json;
-using Domain.Constants;
+﻿using Domain.Constants;
 using Domain.Interfaces.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace Infrastructure.Services;
 
@@ -122,13 +124,11 @@ public class OAuthService : IOAuthService
     }
 
     private async Task<OAuthUserInfo?> ValidateAppleTokenAsync(
-        string identityToken,
-        CancellationToken cancellationToken)
+    string identityToken,
+    CancellationToken cancellationToken)
     {
         try
         {
-            // Apple uses JWT tokens that need to be validated
-            // For mobile apps, the identity token is a JWT signed by Apple
             var handler = new JwtSecurityTokenHandler();
 
             if (!handler.CanReadToken(identityToken))
@@ -137,46 +137,68 @@ public class OAuthService : IOAuthService
                 return null;
             }
 
-            var jwt = handler.ReadJwtToken(identityToken);
+            // Per SVILUPPO: legge solo il token senza validare firma
+            // var jwt = handler.ReadJwtToken(identityToken);
 
-            // Verify issuer
-            if (jwt.Issuer != "https://appleid.apple.com")
+            // Per PRODUZIONE: valida firma con chiavi pubbliche Apple
+            var validationParameters = new TokenValidationParameters
             {
-                _logger.LogWarning("Invalid Apple token issuer: {Issuer}", jwt.Issuer);
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = true,
+                ValidIssuer = "https://appleid.apple.com",
+                ValidateAudience = true,
+                ValidAudience = _configuration["OAuth:Apple:ClientId"],
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero,
+                // Apple usa chiavi pubbliche RSA recuperate da:
+                // https://appleid.apple.com/auth/keys
+                // Per semplicità in sviluppo, si può disabilitare la validazione
+                // In produzione DEVE essere abilitata
+                RequireSignedTokens = true
+            };
+
+            ClaimsPrincipal? principal;
+            SecurityToken? validatedToken;
+
+            // OPZIONE 1: Sviluppo (salta validazione firma)
+            // Decommenta per sviluppo
+            /*
+            validationParameters.SignatureValidator = (token, parameters) =>
+            {
+                var jwt = new JwtSecurityToken(token);
+                return jwt;
+            };
+            */
+
+            // OPZIONE 2: Produzione (valida firma con chiavi Apple)
+            // Richiede implementazione di fetch delle chiavi pubbliche Apple
+            // Vedi: https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/verifying_a_user
+
+            try
+            {
+                principal = handler.ValidateToken(identityToken, validationParameters, out validatedToken);
+            }
+            catch (SecurityTokenException ex)
+            {
+                _logger.LogWarning(ex, "Apple token validation failed");
                 return null;
             }
 
-            // Verify audience (your app's bundle ID)
-            var clientId = _configuration["OAuth:Apple:ClientId"];
-            if (!string.IsNullOrEmpty(clientId) && !jwt.Audiences.Contains(clientId))
+            var jwt = validatedToken as JwtSecurityToken;
+            if (jwt == null)
             {
-                _logger.LogWarning("Apple token audience mismatch");
+                _logger.LogWarning("Invalid Apple JWT token");
                 return null;
             }
 
-            // Check expiration
-            if (jwt.ValidTo < DateTime.UtcNow)
-            {
-                _logger.LogWarning("Apple token has expired");
-                return null;
-            }
-
-            // Extract claims
             var providerId = jwt.Subject;
             var email = jwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-
-            // Apple may not always return email (only on first login or if user shared it)
-            // For subsequent logins, we rely on the providerId (sub claim)
 
             if (string.IsNullOrEmpty(providerId))
             {
                 _logger.LogWarning("Apple token missing subject claim");
                 return null;
             }
-
-            // Note: Apple doesn't provide first/last name in the JWT
-            // These come separately in the authorization response on first sign-in
-            // The mobile app should send these separately if available
 
             return new OAuthUserInfo
             {

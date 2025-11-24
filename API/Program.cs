@@ -143,16 +143,16 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 
-    options.AddPolicy("Production", policy =>
-    {
-        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-            ?? Array.Empty<string>();
+    //options.AddPolicy("Production", policy =>
+    //{
+    //    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    //        ?? Array.Empty<string>();
 
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
+    //    policy.WithOrigins(allowedOrigins)
+    //          .AllowAnyMethod()
+    //          .AllowAnyHeader()
+    //          .AllowCredentials();
+    //});
 });
 
 // Add Health Checks
