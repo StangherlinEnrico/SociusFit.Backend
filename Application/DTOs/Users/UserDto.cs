@@ -12,5 +12,7 @@ public class UserDto
     public string Email { get; set; } = string.Empty;
     public bool IsEmailVerified { get; set; }
     public string? Provider { get; set; }
+    public string? Location { get; set; }
+    public int? MaxDistance { get; set; }
     public DateTime CreatedAt { get; set; }
 }

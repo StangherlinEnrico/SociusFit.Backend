@@ -14,6 +14,10 @@ public class User
     public string? Provider { get; private set; }
     public string? ProviderId { get; private set; }
 
+    // Location settings
+    public string? Location { get; private set; }
+    public int? MaxDistance { get; private set; }
+
     // Email verification tokens
     public string? EmailVerificationToken { get; private set; }
     public DateTime? EmailVerificationTokenExpiresAt { get; private set; }
@@ -102,6 +106,22 @@ public class User
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void SetLocation(string? location, int? maxDistance)
+    {
+        if (!string.IsNullOrWhiteSpace(location) && location.Length > 100)
+            throw new ArgumentException("Location cannot exceed 100 characters", nameof(location));
+
+        if (maxDistance.HasValue && maxDistance.Value < 0)
+            throw new ArgumentException("Max distance must be positive", nameof(maxDistance));
+
+        if (maxDistance.HasValue && maxDistance.Value > 500)
+            throw new ArgumentException("Max distance cannot exceed 500 km", nameof(maxDistance));
+
+        Location = location?.Trim();
+        MaxDistance = maxDistance;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void VerifyEmail()
     {
         EmailVerifiedAt = DateTime.UtcNow;
@@ -184,6 +204,8 @@ public class User
     public bool HasPassword() => !string.IsNullOrWhiteSpace(PasswordHash);
 
     public bool CanLoginWithPassword() => HasPassword() && !HasOAuthProvider();
+
+    public bool HasLocation() => !string.IsNullOrWhiteSpace(Location);
 
     private void ClearEmailVerificationToken()
     {

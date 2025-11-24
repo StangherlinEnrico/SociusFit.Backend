@@ -24,4 +24,11 @@ public static class ValidationConstants
     {
         public const int MaxLength = 45; // IPv6 max length
     }
+
+    public static class Location
+    {
+        public const int MaxLength = 100;
+        public const int MinDistance = 0;
+        public const int MaxDistanceLimit = 500; // km
+    }
 }
