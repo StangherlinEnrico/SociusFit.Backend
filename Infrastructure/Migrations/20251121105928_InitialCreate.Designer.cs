@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251121102540_InitialCreate")]
+    [Migration("20251121105928_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -192,6 +192,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("first_name");
 
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_login_at");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -202,6 +206,15 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("password_hash");
+
+                    b.Property<string>("PasswordResetToken")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("password_reset_token");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("password_reset_token_expires_at");
 
                     b.Property<string>("Provider")
                         .HasMaxLength(50)
@@ -229,6 +242,14 @@ namespace Infrastructure.Migrations
                     b.HasIndex("EmailVerificationToken")
                         .HasDatabaseName("IX_users_email_verification_token")
                         .HasFilter("[email_verification_token] IS NOT NULL");
+
+                    b.HasIndex("PasswordResetToken")
+                        .HasDatabaseName("IX_users_password_reset_token")
+                        .HasFilter("[password_reset_token] IS NOT NULL");
+
+                    b.HasIndex("Provider", "ProviderId")
+                        .HasDatabaseName("IX_users_provider")
+                        .HasFilter("[provider] IS NOT NULL");
 
                     b.ToTable("users", (string)null);
                 });

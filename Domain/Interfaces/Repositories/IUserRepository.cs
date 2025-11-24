@@ -12,4 +12,8 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetByProviderAsync(string provider, string providerId, CancellationToken cancellationToken = default);
 
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
+
+    Task<User?> GetByPasswordResetTokenAsync(string token, CancellationToken cancellationToken = default);
+
+    Task<User?> GetByEmailVerificationTokenAsync(string token, CancellationToken cancellationToken = default);
 }

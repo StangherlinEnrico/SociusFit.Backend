@@ -1,154 +1,194 @@
-﻿using Domain.Interfaces.Services;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json;
+using Domain.Constants;
+using Domain.Interfaces.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 
 /// <summary>
 /// OAuth service for validating third-party authentication tokens
-/// NOTE: This is a stub implementation. In production, you would integrate with
-/// actual OAuth providers (Google, Facebook, Apple, Microsoft)
+/// Supports Google and Apple Sign-In for mobile apps
 /// </summary>
 public class OAuthService : IOAuthService
 {
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
+    private readonly ILogger<OAuthService> _logger;
 
-    public OAuthService(IConfiguration configuration, HttpClient httpClient)
+    public OAuthService(
+        IConfiguration configuration,
+        HttpClient httpClient,
+        ILogger<OAuthService> logger)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<(string Email, string ProviderId, string FirstName, string LastName)?> ValidateProviderTokenAsync(
+    public async Task<OAuthUserInfo?> ValidateTokenAsync(
         string provider,
         string token,
         CancellationToken cancellationToken = default)
     {
-        return provider.ToLowerInvariant() switch
+        if (string.IsNullOrWhiteSpace(provider))
+            return null;
+
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var normalizedProvider = provider.ToLowerInvariant();
+
+        if (!AuthConstants.OAuthProviders.IsSupported(normalizedProvider))
         {
-            "google" => await ValidateGoogleTokenAsync(token, cancellationToken),
-            "facebook" => await ValidateFacebookTokenAsync(token, cancellationToken),
-            "apple" => await ValidateAppleTokenAsync(token, cancellationToken),
-            "microsoft" => await ValidateMicrosoftTokenAsync(token, cancellationToken),
-            _ => throw new NotSupportedException($"OAuth provider '{provider}' is not supported")
+            _logger.LogWarning("Unsupported OAuth provider: {Provider}", provider);
+            return null;
+        }
+
+        return normalizedProvider switch
+        {
+            AuthConstants.OAuthProviders.Google => await ValidateGoogleTokenAsync(token, cancellationToken),
+            AuthConstants.OAuthProviders.Apple => await ValidateAppleTokenAsync(token, cancellationToken),
+            _ => null
         };
     }
 
-    private async Task<(string Email, string ProviderId, string FirstName, string LastName)?> ValidateGoogleTokenAsync(
-        string token,
+    private async Task<OAuthUserInfo?> ValidateGoogleTokenAsync(
+        string idToken,
         CancellationToken cancellationToken)
     {
         try
         {
-            // Google Token Validation Endpoint
+            // Google ID Token validation endpoint
             var response = await _httpClient.GetAsync(
-                $"https://oauth2.googleapis.com/tokeninfo?id_token={token}",
+                $"https://oauth2.googleapis.com/tokeninfo?id_token={idToken}",
                 cancellationToken);
 
             if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Google token validation failed with status: {StatusCode}", response.StatusCode);
                 return null;
+            }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var tokenInfo = System.Text.Json.JsonDocument.Parse(content);
+            using var tokenInfo = JsonDocument.Parse(content);
             var root = tokenInfo.RootElement;
 
             // Verify the token is for this app
             var clientId = _configuration["OAuth:Google:ClientId"];
-            if (root.GetProperty("aud").GetString() != clientId)
-                return null;
-
-            var email = root.GetProperty("email").GetString();
-            var providerId = root.GetProperty("sub").GetString();
-            var givenName = root.TryGetProperty("given_name", out var gn) ? gn.GetString() : "";
-            var familyName = root.TryGetProperty("family_name", out var fn) ? fn.GetString() : "";
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(providerId))
-                return null;
-
-            return (email, providerId, givenName ?? "", familyName ?? "");
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private async Task<(string Email, string ProviderId, string FirstName, string LastName)?> ValidateFacebookTokenAsync(
-        string token,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            // Facebook Graph API
-            var response = await _httpClient.GetAsync(
-                $"https://graph.facebook.com/me?fields=id,email,first_name,last_name&access_token={token}",
-                cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-                return null;
-
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var userInfo = System.Text.Json.JsonDocument.Parse(content);
-            var root = userInfo.RootElement;
+            if (!string.IsNullOrEmpty(clientId))
+            {
+                var audience = root.TryGetProperty("aud", out var aud) ? aud.GetString() : null;
+                if (audience != clientId)
+                {
+                    _logger.LogWarning("Google token audience mismatch. Expected: {Expected}, Got: {Got}", clientId, audience);
+                    return null;
+                }
+            }
 
             var email = root.TryGetProperty("email", out var e) ? e.GetString() : null;
-            var providerId = root.GetProperty("id").GetString();
-            var firstName = root.TryGetProperty("first_name", out var fn) ? fn.GetString() : "";
-            var lastName = root.TryGetProperty("last_name", out var ln) ? ln.GetString() : "";
+            var providerId = root.TryGetProperty("sub", out var s) ? s.GetString() : null;
+            var givenName = root.TryGetProperty("given_name", out var gn) ? gn.GetString() ?? "" : "";
+            var familyName = root.TryGetProperty("family_name", out var fn) ? fn.GetString() ?? "" : "";
+
+            // Email verified check
+            var emailVerified = root.TryGetProperty("email_verified", out var ev) && ev.GetString() == "true";
+            if (!emailVerified)
+            {
+                _logger.LogWarning("Google account email not verified");
+                return null;
+            }
 
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(providerId))
+            {
+                _logger.LogWarning("Google token missing required fields (email or sub)");
                 return null;
+            }
 
-            return (email, providerId, firstName ?? "", lastName ?? "");
+            return new OAuthUserInfo
+            {
+                Email = email,
+                ProviderId = providerId,
+                FirstName = givenName,
+                LastName = familyName
+            };
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Error validating Google token");
             return null;
         }
     }
 
-    private Task<(string Email, string ProviderId, string FirstName, string LastName)?> ValidateAppleTokenAsync(
-        string token,
-        CancellationToken cancellationToken)
-    {
-        // Apple Sign In requires JWT validation with Apple's public keys
-        // This is more complex and requires additional libraries
-        // Placeholder implementation - integrate Apple Sign In SDK in production
-        throw new NotImplementedException("Apple Sign In validation not implemented. Use Apple Sign In SDK.");
-    }
-
-    private async Task<(string Email, string ProviderId, string FirstName, string LastName)?> ValidateMicrosoftTokenAsync(
-        string token,
+    private async Task<OAuthUserInfo?> ValidateAppleTokenAsync(
+        string identityToken,
         CancellationToken cancellationToken)
     {
         try
         {
-            // Microsoft Graph API
-            var request = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me");
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            // Apple uses JWT tokens that need to be validated
+            // For mobile apps, the identity token is a JWT signed by Apple
+            var handler = new JwtSecurityTokenHandler();
 
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
+            if (!handler.CanReadToken(identityToken))
+            {
+                _logger.LogWarning("Invalid Apple identity token format");
                 return null;
+            }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var userInfo = System.Text.Json.JsonDocument.Parse(content);
-            var root = userInfo.RootElement;
+            var jwt = handler.ReadJwtToken(identityToken);
 
-            var email = root.TryGetProperty("mail", out var m) ? m.GetString() :
-                        root.TryGetProperty("userPrincipalName", out var upn) ? upn.GetString() : null;
-            var providerId = root.GetProperty("id").GetString();
-            var givenName = root.TryGetProperty("givenName", out var gn) ? gn.GetString() : "";
-            var surname = root.TryGetProperty("surname", out var sn) ? sn.GetString() : "";
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(providerId))
+            // Verify issuer
+            if (jwt.Issuer != "https://appleid.apple.com")
+            {
+                _logger.LogWarning("Invalid Apple token issuer: {Issuer}", jwt.Issuer);
                 return null;
+            }
 
-            return (email, providerId, givenName ?? "", surname ?? "");
+            // Verify audience (your app's bundle ID)
+            var clientId = _configuration["OAuth:Apple:ClientId"];
+            if (!string.IsNullOrEmpty(clientId) && !jwt.Audiences.Contains(clientId))
+            {
+                _logger.LogWarning("Apple token audience mismatch");
+                return null;
+            }
+
+            // Check expiration
+            if (jwt.ValidTo < DateTime.UtcNow)
+            {
+                _logger.LogWarning("Apple token has expired");
+                return null;
+            }
+
+            // Extract claims
+            var providerId = jwt.Subject;
+            var email = jwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+
+            // Apple may not always return email (only on first login or if user shared it)
+            // For subsequent logins, we rely on the providerId (sub claim)
+
+            if (string.IsNullOrEmpty(providerId))
+            {
+                _logger.LogWarning("Apple token missing subject claim");
+                return null;
+            }
+
+            // Note: Apple doesn't provide first/last name in the JWT
+            // These come separately in the authorization response on first sign-in
+            // The mobile app should send these separately if available
+
+            return new OAuthUserInfo
+            {
+                Email = email ?? "",
+                ProviderId = providerId,
+                FirstName = "",
+                LastName = ""
+            };
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Error validating Apple token");
             return null;
         }
     }

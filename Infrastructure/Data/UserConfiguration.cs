@@ -59,6 +59,15 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.EmailVerificationTokenExpiresAt)
             .HasColumnName("email_verification_token_expires_at");
 
+        // Password reset fields
+        builder.Property(u => u.PasswordResetToken)
+            .HasColumnName("password_reset_token")
+            .HasMaxLength(255);
+
+        builder.Property(u => u.PasswordResetTokenExpiresAt)
+            .HasColumnName("password_reset_token_expires_at");
+
+        // Timestamps
         builder.Property(u => u.CreatedAt)
             .HasColumnName("created_at")
             .IsRequired();
@@ -70,6 +79,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.DeletedAt)
             .HasColumnName("deleted_at");
 
+        builder.Property(u => u.LastLoginAt)
+            .HasColumnName("last_login_at");
+
         // Indexes
         builder.HasIndex(u => u.Email)
             .IsUnique()
@@ -78,6 +90,14 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.EmailVerificationToken)
             .HasDatabaseName("IX_users_email_verification_token")
             .HasFilter("[email_verification_token] IS NOT NULL");
+
+        builder.HasIndex(u => u.PasswordResetToken)
+            .HasDatabaseName("IX_users_password_reset_token")
+            .HasFilter("[password_reset_token] IS NOT NULL");
+
+        builder.HasIndex(u => new { u.Provider, u.ProviderId })
+            .HasDatabaseName("IX_users_provider")
+            .HasFilter("[provider] IS NOT NULL");
 
         builder.HasIndex(u => u.DeletedAt)
             .HasDatabaseName("IX_users_deleted_at");

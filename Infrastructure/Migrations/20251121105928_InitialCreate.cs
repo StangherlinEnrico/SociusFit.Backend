@@ -26,9 +26,12 @@ namespace Infrastructure.Migrations
                     provider_id = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     email_verification_token = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     email_verification_token_expires_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    password_reset_token = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    password_reset_token_expires_at = table.Column<DateTime>(type: "datetime2", nullable: true),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    deleted_at = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    deleted_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    last_login_at = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -139,6 +142,18 @@ namespace Infrastructure.Migrations
                 table: "users",
                 column: "email_verification_token",
                 filter: "[email_verification_token] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_users_password_reset_token",
+                table: "users",
+                column: "password_reset_token",
+                filter: "[password_reset_token] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_users_provider",
+                table: "users",
+                columns: new[] { "provider", "provider_id" },
+                filter: "[provider] IS NOT NULL");
         }
 
         /// <inheritdoc />

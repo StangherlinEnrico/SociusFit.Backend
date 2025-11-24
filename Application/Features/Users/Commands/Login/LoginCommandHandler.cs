@@ -25,17 +25,28 @@ public class LoginCommandHandler(
     {
         // Find user by email
         var user = await _unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
+
         if (user == null)
         {
             return Result<AuthResponseDto>.FailureResult("Invalid email or password");
         }
 
+        // Check if user registered with OAuth only
+        if (user.HasOAuthProvider() && !user.HasPassword())
+        {
+            return Result<AuthResponseDto>.FailureResult(
+                $"This account uses {user.Provider} sign-in. Please login with {user.Provider}.");
+        }
+
         // Verify password
-        if (string.IsNullOrEmpty(user.PasswordHash) ||
-            !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        if (!user.HasPassword() || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash!))
         {
             return Result<AuthResponseDto>.FailureResult("Invalid email or password");
         }
+
+        // Record login
+        user.RecordLogin();
+        _unitOfWork.Users.Update(user);
 
         // Generate JWT tokens
         var accessToken = _jwtService.GenerateAccessToken(

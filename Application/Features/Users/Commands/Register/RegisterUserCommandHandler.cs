@@ -1,5 +1,6 @@
 ﻿using Application.Common.Models;
 using Application.DTOs.Users;
+using Domain.Constants;
 using Domain.Entities;
 using Domain.Interfaces;
 using Domain.Interfaces.Services;
@@ -38,9 +39,9 @@ public class RegisterUserCommandHandler(
         var passwordHash = _passwordHasher.HashPassword(request.Password);
         user.SetPassword(passwordHash);
 
-        // Generate email verification token (expires in 24 hours)
+        // Generate email verification token
         var verificationToken = _tokenGenerator.GenerateToken();
-        var tokenExpiresAt = DateTime.UtcNow.AddHours(24);
+        var tokenExpiresAt = DateTime.UtcNow.AddHours(AuthConstants.EmailVerificationTokenExpirationHours);
         user.SetEmailVerificationToken(verificationToken, tokenExpiresAt);
 
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
@@ -75,9 +76,10 @@ public class RegisterUserCommandHandler(
                 verificationToken,
                 cancellationToken);
         }
-        catch (Exception)
+        catch
         {
             // Log error but don't fail registration
+            // Email can be resent later
         }
 
         // Return response

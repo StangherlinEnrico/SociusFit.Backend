@@ -8,7 +8,9 @@ namespace Application.Features.Users.Commands.VerifyEmail;
 /// <summary>
 /// Handler for VerifyEmailCommand
 /// </summary>
-public class VerifyEmailCommandHandler(IUnitOfWork unitOfWork, IEmailService emailService) : IRequestHandler<VerifyEmailCommand, Result<string>>
+public class VerifyEmailCommandHandler(
+    IUnitOfWork unitOfWork,
+    IEmailService emailService) : IRequestHandler<VerifyEmailCommand, Result<string>>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IEmailService _emailService = emailService;
@@ -23,11 +25,9 @@ public class VerifyEmailCommandHandler(IUnitOfWork unitOfWork, IEmailService ema
         }
 
         // Find user by verification token
-        var users = await _unitOfWork.Users.FindAsync(
-            u => u.EmailVerificationToken == request.Token,
+        var user = await _unitOfWork.Users.GetByEmailVerificationTokenAsync(
+            request.Token,
             cancellationToken);
-
-        var user = users.FirstOrDefault();
 
         if (user == null)
         {
@@ -42,7 +42,7 @@ public class VerifyEmailCommandHandler(IUnitOfWork unitOfWork, IEmailService ema
                 "Your email has already been verified. You can log in now.");
         }
 
-        // Validate token
+        // Validate token expiration
         if (!user.IsEmailVerificationTokenValid(request.Token))
         {
             return Result<string>.FailureResult("Verification token has expired. Please request a new one.");
@@ -61,7 +61,7 @@ public class VerifyEmailCommandHandler(IUnitOfWork unitOfWork, IEmailService ema
                 user.FirstName,
                 cancellationToken);
         }
-        catch (Exception)
+        catch
         {
             // Log error but don't fail verification
         }

@@ -1,5 +1,6 @@
 ﻿using Application.Common.Models;
 using Application.DTOs.Users;
+using Domain.Constants;
 using Domain.Entities;
 using Domain.Interfaces;
 using Domain.Interfaces.Services;
@@ -23,36 +24,81 @@ public class LoginOAuthCommandHandler(
         LoginOAuthCommand request,
         CancellationToken cancellationToken)
     {
+        // Validate provider
+        if (!AuthConstants.OAuthProviders.IsSupported(request.Provider))
+        {
+            return Result<AuthResponseDto>.FailureResult(
+                $"Unsupported OAuth provider. Supported providers: {string.Join(", ", AuthConstants.OAuthProviders.Supported)}");
+        }
+
         // Validate OAuth token
-        var providerData = await _oAuthService.ValidateProviderTokenAsync(
+        var userInfo = await _oAuthService.ValidateTokenAsync(
             request.Provider,
             request.Token,
             cancellationToken);
 
-        if (providerData == null)
+        if (userInfo == null)
         {
             return Result<AuthResponseDto>.FailureResult("Invalid OAuth token");
         }
 
-        // Find or create user
+        var normalizedProvider = request.Provider.ToLowerInvariant();
+
+        // Find existing user by provider
         var user = await _unitOfWork.Users.GetByProviderAsync(
-            request.Provider,
-            providerData.Value.ProviderId,
+            normalizedProvider,
+            userInfo.ProviderId,
             cancellationToken);
+
+        if (user == null && userInfo.HasEmail)
+        {
+            // Check if user exists with same email (link accounts)
+            user = await _unitOfWork.Users.GetByEmailAsync(userInfo.Email, cancellationToken);
+
+            if (user != null)
+            {
+                // Link OAuth provider to existing account
+                user.SetOAuthProvider(normalizedProvider, userInfo.ProviderId);
+                if (!user.IsEmailVerified())
+                {
+                    user.VerifyEmail();
+                }
+            }
+        }
 
         if (user == null)
         {
             // Create new user
-            user = new User(
-                providerData.Value.FirstName,
-                providerData.Value.LastName,
-                providerData.Value.Email);
-            user.SetOAuthProvider(request.Provider, providerData.Value.ProviderId);
-            user.VerifyEmail(); // OAuth users are auto-verified
+            // For Apple, use provided names from request if OAuth didn't return them
+            var firstName = !string.IsNullOrWhiteSpace(userInfo.FirstName)
+                ? userInfo.FirstName
+                : request.FirstName ?? "User";
+
+            var lastName = !string.IsNullOrWhiteSpace(userInfo.LastName)
+                ? userInfo.LastName
+                : request.LastName ?? "";
+
+            // Email is required for new users
+            if (!userInfo.HasEmail)
+            {
+                return Result<AuthResponseDto>.FailureResult(
+                    "Email is required for registration. Please allow email sharing with the app.");
+            }
+
+            user = User.CreateFromOAuth(
+                firstName,
+                lastName,
+                userInfo.Email,
+                normalizedProvider,
+                userInfo.ProviderId);
 
             await _unitOfWork.Users.AddAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
+
+        // Record login
+        user.RecordLogin();
+        _unitOfWork.Users.Update(user);
 
         // Generate JWT tokens
         var accessToken = _jwtService.GenerateAccessToken(

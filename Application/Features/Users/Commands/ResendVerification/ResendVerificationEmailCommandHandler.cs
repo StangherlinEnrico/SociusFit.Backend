@@ -1,4 +1,5 @@
 ﻿using Application.Common.Models;
+using Domain.Constants;
 using Domain.Interfaces;
 using Domain.Interfaces.Services;
 using MediatR;
@@ -40,7 +41,7 @@ public class ResendVerificationEmailCommandHandler(
 
         // Generate new verification token
         var verificationToken = _tokenGenerator.GenerateToken();
-        var tokenExpiresAt = DateTime.UtcNow.AddHours(24);
+        var tokenExpiresAt = DateTime.UtcNow.AddHours(AuthConstants.EmailVerificationTokenExpirationHours);
         user.SetEmailVerificationToken(verificationToken, tokenExpiresAt);
 
         _unitOfWork.Users.Update(user);
@@ -55,7 +56,7 @@ public class ResendVerificationEmailCommandHandler(
                 verificationToken,
                 cancellationToken);
         }
-        catch (Exception)
+        catch
         {
             return Result<string>.FailureResult("Failed to send verification email. Please try again later.");
         }
