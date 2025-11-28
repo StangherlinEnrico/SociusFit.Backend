@@ -1,173 +1,110 @@
-﻿using System.Security.Claims;
-using Application.DTOs.Users;
-using Application.Features.Users.Commands.DeleteUser;
-using Application.Features.Users.Commands.UpdateLocation;
-using Application.Features.Users.Commands.UpdateProfile;
-using Application.Features.Users.Queries.GetUser;
-using MediatR;
+﻿using Application.Requests;
+using Application.UseCases.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace API.Controllers;
 
-/// <summary>
-/// Users management endpoints (protected)
-/// </summary>
 [ApiController]
-[Route("api/v1/[controller]")]
-[Produces("application/json")]
-[Authorize] // All endpoints require authentication
-public class UsersController(IMediator mediator, ILogger<UsersController> logger) : ControllerBase
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
 {
-    private readonly IMediator _mediator = mediator;
-    private readonly ILogger<UsersController> _logger = logger;
+    private readonly RegisterUserUseCase _registerUseCase;
+    private readonly LoginUserUseCase _loginUseCase;
+    private readonly GetUserByIdUseCase _getUserByIdUseCase;
+    private readonly ILogger<UsersController> _logger;
+
+    public UsersController(
+        RegisterUserUseCase registerUseCase,
+        LoginUserUseCase loginUseCase,
+        GetUserByIdUseCase getUserByIdUseCase,
+        ILogger<UsersController> logger)
+    {
+        _registerUseCase = registerUseCase;
+        _loginUseCase = loginUseCase;
+        _getUserByIdUseCase = getUserByIdUseCase;
+        _logger = logger;
+    }
 
     /// <summary>
-    /// Get current authenticated user profile
+    /// Register a new user
     /// </summary>
-    /// <returns>User profile</returns>
-    /// <response code="200">User found</response>
-    /// <response code="401">Unauthorized</response>
-    [HttpGet("me")]
-    [ProducesResponseType(typeof(Application.Common.Models.Result<UserDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetCurrentUser()
+    [HttpPost("register")]
+    [ProducesResponseType(typeof(Application.DTOs.AuthResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
-        var userId = GetUserIdFromClaims();
-        if (userId == null)
-            return Unauthorized();
+        var result = await _registerUseCase.ExecuteAsync(request, cancellationToken);
 
-        var query = new GetUserByIdQuery { UserId = userId.Value };
-        var result = await _mediator.Send(query);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new ErrorResponse { Errors = result.Errors.ToList() });
+        }
 
-        if (!result.Success)
-            return NotFound(result);
+        return CreatedAtAction(nameof(GetById), new { id = result.Value!.User.Id }, result.Value);
+    }
 
-        return Ok(result);
+    /// <summary>
+    /// Login user
+    /// </summary>
+    [HttpPost("login")]
+    [ProducesResponseType(typeof(Application.DTOs.AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _loginUseCase.ExecuteAsync(request, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Unauthorized(new ErrorResponse { Errors = result.Errors.ToList() });
+        }
+
+        return Ok(result.Value);
     }
 
     /// <summary>
     /// Get user by ID
     /// </summary>
-    /// <param name="id">User ID</param>
-    /// <returns>User details</returns>
-    /// <response code="200">User found</response>
-    /// <response code="404">User not found</response>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Application.Common.Models.Result<UserDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUser(int id)
+    [Authorize]
+    [ProducesResponseType(typeof(Application.DTOs.UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var query = new GetUserByIdQuery { UserId = id };
-        var result = await _mediator.Send(query);
+        var result = await _getUserByIdUseCase.ExecuteAsync(id, cancellationToken);
 
-        if (!result.Success)
-            return NotFound(result);
-
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Update current user profile
-    /// </summary>
-    /// <param name="dto">Profile update data</param>
-    /// <returns>Updated user</returns>
-    /// <response code="200">Profile updated successfully</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="404">User not found</response>
-    [HttpPut("me/profile")]
-    [ProducesResponseType(typeof(Application.Common.Models.Result<UserDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto dto)
-    {
-        var userId = GetUserIdFromClaims();
-        if (userId == null)
-            return Unauthorized();
-
-        var command = new UpdateUserProfileCommand
+        if (!result.IsSuccess)
         {
-            UserId = userId.Value,
-            FirstName = dto.FirstName,
-            LastName = dto.LastName
-        };
+            return NotFound(new ErrorResponse { Errors = result.Errors.ToList() });
+        }
 
-        var result = await _mediator.Send(command);
-
-        if (!result.Success)
-            return NotFound(result);
-
-        _logger.LogInformation("Profile updated for user: {UserId}", userId.Value);
-        return Ok(result);
+        return Ok(result.Value);
     }
 
     /// <summary>
-    /// Update current user location settings
+    /// Get current authenticated user
     /// </summary>
-    /// <param name="dto">Location settings</param>
-    /// <returns>Updated user</returns>
-    /// <response code="200">Location updated successfully</response>
-    /// <response code="400">Invalid location data</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="404">User not found</response>
-    [HttpPut("me/location")]
-    [ProducesResponseType(typeof(Application.Common.Models.Result<UserDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(typeof(Application.DTOs.UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateLocation([FromBody] UpdateLocationDto dto)
-    {
-        var userId = GetUserIdFromClaims();
-        if (userId == null)
-            return Unauthorized();
-
-        var command = new UpdateUserLocationCommand
-        {
-            UserId = userId.Value,
-            Location = dto.Location,
-            MaxDistance = dto.MaxDistance
-        };
-
-        var result = await _mediator.Send(command);
-
-        if (!result.Success)
-            return NotFound(result);
-
-        _logger.LogInformation("Location updated for user: {UserId}, Location: {Location}, MaxDistance: {MaxDistance}",
-            userId.Value, dto.Location, dto.MaxDistance);
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Delete current user account (soft delete)
-    /// </summary>
-    /// <returns>Success message</returns>
-    /// <response code="200">User deleted successfully</response>
-    /// <response code="401">Unauthorized</response>
-    /// <response code="404">User not found</response>
-    [HttpDelete("me")]
-    [ProducesResponseType(typeof(Application.Common.Models.Result), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteCurrentUser()
-    {
-        var userId = GetUserIdFromClaims();
-        if (userId == null)
-            return Unauthorized();
-
-        var command = new DeleteUserCommand { UserId = userId.Value };
-        var result = await _mediator.Send(command);
-
-        if (!result.Success)
-            return NotFound(result);
-
-        _logger.LogInformation("User deleted: {UserId}", userId.Value);
-        return Ok(result);
-    }
-
-    private int? GetUserIdFromClaims()
+    public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return int.TryParse(userIdClaim, out var userId) ? userId : null;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new ErrorResponse { Errors = new List<string> { "Invalid token" } });
+        }
+
+        var result = await _getUserByIdUseCase.ExecuteAsync(userId, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return NotFound(new ErrorResponse { Errors = result.Errors.ToList() });
+        }
+
+        return Ok(result.Value);
     }
 }
