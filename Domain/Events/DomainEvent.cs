@@ -1,22 +1,13 @@
 ﻿namespace Domain.Events;
 
-/// <summary>
-/// Base interface for domain events
-/// </summary>
-public interface IDomainEvent
+public abstract class DomainEvent
 {
-    DateTime OccurredOn { get; }
-}
-
-/// <summary>
-/// Base class for domain events
-/// </summary>
-public abstract class DomainEvent : IDomainEvent
-{
-    public DateTime OccurredOn { get; }
+    public Guid EventId { get; private set; }
+    public DateTime OccurredOn { get; private set; }
 
     protected DomainEvent()
     {
+        EventId = Guid.NewGuid();
         OccurredOn = DateTime.UtcNow;
     }
 }

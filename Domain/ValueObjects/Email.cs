@@ -1,52 +1,43 @@
-﻿namespace Domain.ValueObjects;
+﻿using System.Text.RegularExpressions;
+using Domain.Exceptions;
 
-/// <summary>
-/// Value object representing an email address
-/// </summary>
-public sealed class Email : IEquatable<Email>
+namespace Domain.ValueObjects;
+
+public class Email
 {
-    public string Value { get; }
+    public string Value { get; private set; }
+
+    private static readonly Regex EmailRegex = new Regex(
+        @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    private Email() { }
 
     public Email(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Email cannot be empty", nameof(value));
+            throw new InvalidEmailException("Email cannot be empty");
 
-        if (!IsValidEmail(value))
-            throw new ArgumentException("Invalid email format", nameof(value));
+        value = value.Trim().ToLowerInvariant();
 
-        Value = value.ToLowerInvariant().Trim();
+        if (!EmailRegex.IsMatch(value))
+            throw new InvalidEmailException($"Invalid email format: {value}");
+
+        Value = value;
     }
 
-    private static bool IsValidEmail(string email)
+    public static implicit operator string(Email email) => email.Value;
+    public static explicit operator Email(string value) => new Email(value);
+
+    public override bool Equals(object? obj)
     {
-        try
-        {
-            var addr = new System.Net.Mail.MailAddress(email);
-            return addr.Address == email;
-        }
-        catch
-        {
-            return false;
-        }
+        if (obj is Email other)
+            return Value == other.Value;
+        return false;
     }
-
-    public bool Equals(Email? other)
-    {
-        if (other is null) return false;
-        return Value.Equals(other.Value, StringComparison.OrdinalIgnoreCase);
-    }
-
-    public override bool Equals(object? obj) => Equals(obj as Email);
 
     public override int GetHashCode() => Value.GetHashCode();
 
-    public static bool operator ==(Email? left, Email? right) =>
-        left?.Equals(right) ?? right is null;
-
-    public static bool operator !=(Email? left, Email? right) => !(left == right);
-
     public override string ToString() => Value;
-
-    public static implicit operator string(Email email) => email.Value;
 }

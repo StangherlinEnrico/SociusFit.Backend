@@ -1,0 +1,61 @@
+﻿using Domain.Constants;
+using Domain.Entities;
+
+namespace Domain.Validators;
+
+public class ProfileValidator
+{
+    public ValidationResult Validate(Profile profile)
+    {
+        var errors = new List<string>();
+
+        if (profile.Age < ProfileConstants.MinAge)
+            errors.Add($"Age must be at least {ProfileConstants.MinAge} years old");
+
+        if (profile.Age > ProfileConstants.MaxAge)
+            errors.Add($"Age cannot exceed {ProfileConstants.MaxAge} years");
+
+        if (string.IsNullOrWhiteSpace(profile.Gender))
+            errors.Add("Gender is required");
+
+        if (string.IsNullOrWhiteSpace(profile.City))
+            errors.Add("City is required");
+        else if (profile.City.Length < ProfileConstants.MinCityLength)
+            errors.Add($"City must be at least {ProfileConstants.MinCityLength} characters long");
+        else if (profile.City.Length > ProfileConstants.MaxCityLength)
+            errors.Add($"City cannot exceed {ProfileConstants.MaxCityLength} characters");
+
+        if (string.IsNullOrWhiteSpace(profile.Bio))
+            errors.Add("Bio is required");
+        else if (profile.Bio.Length < ProfileConstants.MinBioLength)
+            errors.Add($"Bio must be at least {ProfileConstants.MinBioLength} characters long");
+        else if (profile.Bio.Length > ProfileConstants.MaxBioLength)
+            errors.Add($"Bio cannot exceed {ProfileConstants.MaxBioLength} characters");
+
+        if (profile.Sports == null || profile.Sports.Count < ProfileConstants.MinSportsRequired)
+            errors.Add($"At least {ProfileConstants.MinSportsRequired} sport is required");
+
+        if (profile.Sports != null && profile.Sports.Count > ProfileConstants.MaxSportsAllowed)
+            errors.Add($"Cannot have more than {ProfileConstants.MaxSportsAllowed} sports");
+
+        return errors.Any()
+            ? ValidationResult.Failure(errors)
+            : ValidationResult.Success();
+    }
+
+    public ValidationResult ValidateForCompletion(Profile profile)
+    {
+        var basicValidation = Validate(profile);
+        if (!basicValidation.IsSuccess)
+            return basicValidation;
+
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(profile.PhotoUrl))
+            errors.Add("Profile photo is required for completion");
+
+        return errors.Any()
+            ? ValidationResult.Failure(errors)
+            : ValidationResult.Success();
+    }
+}
