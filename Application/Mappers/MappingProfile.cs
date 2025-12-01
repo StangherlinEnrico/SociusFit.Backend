@@ -10,7 +10,7 @@ public class MappingProfile : AutoMapper.Profile
         CreateMap<User, UserDto>();
 
         CreateMap<Profile, ProfileDto>()
-            .ForMember(dest => dest.IsComplete, opt => opt.MapFrom(src => src.IsComplete()));
+            .ForMember(dest => dest.MaxDistance, opt => opt.MapFrom(src => src.MaxDistance));
 
         CreateMap<Sport, SportDto>();
     }

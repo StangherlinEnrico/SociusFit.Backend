@@ -11,7 +11,7 @@ public class CompleteProfileSpecification : BaseSpecification<Profile>
             !string.IsNullOrWhiteSpace(p.City) &&
             !string.IsNullOrWhiteSpace(p.Bio) &&
             !string.IsNullOrWhiteSpace(p.PhotoUrl) &&
-            p.Sports.Count > 0)
+            p.ProfileSports.Count > 0)
     {
     }
 }

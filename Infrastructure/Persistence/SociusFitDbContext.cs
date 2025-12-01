@@ -14,6 +14,7 @@ public class SociusFitDbContext : DbContext
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<Profile> Profiles { get; set; } = null!;
     public DbSet<Sport> Sports { get; set; } = null!;
+    public DbSet<ProfileSport> ProfileSports { get; set; } = null!;
     public DbSet<UserCredentials> UserCredentials { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

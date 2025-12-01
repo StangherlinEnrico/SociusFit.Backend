@@ -16,5 +16,9 @@ public static class ProfileConstants
 
     public const int MaxPhotoSizeInBytes = 5 * 1024 * 1024; // 5MB
 
+    public const int MinMaxDistance = 5; // 5 km minimo
+    public const int MaxMaxDistance = 100; // 100 km massimo
+    public const int DefaultMaxDistance = 25; // 25 km di default
+
     public static readonly string[] AllowedPhotoExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
 }

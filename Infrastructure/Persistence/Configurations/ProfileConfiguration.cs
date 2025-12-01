@@ -33,6 +33,10 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(p => p.MaxDistance)
+            .IsRequired()
+            .HasDefaultValue(25);
+
         builder.Property(p => p.PhotoUrl)
             .HasMaxLength(500);
 
@@ -49,12 +53,10 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
 
         builder.HasIndex(p => p.Age);
 
-        builder.HasMany(p => p.Sports)
-            .WithMany()
-            .UsingEntity<Dictionary<string, object>>(
-                "ProfileSports",
-                j => j.HasOne<Sport>().WithMany().HasForeignKey("SportId").OnDelete(DeleteBehavior.Cascade),
-                j => j.HasOne<Profile>().WithMany().HasForeignKey("ProfileId").OnDelete(DeleteBehavior.Cascade)
-            );
+        // La relazione con ProfileSport è gestita da ProfileSportConfiguration
+        builder.HasMany(p => p.ProfileSports)
+            .WithOne(ps => ps.Profile)
+            .HasForeignKey(ps => ps.ProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

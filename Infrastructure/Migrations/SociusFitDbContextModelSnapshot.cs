@@ -48,6 +48,11 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int>("MaxDistance")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(25);
+
                     b.Property<string>("PhotoUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -70,9 +75,12 @@ namespace Infrastructure.Migrations
                     b.ToTable("Profiles", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Entities.Sport", b =>
+            modelBuilder.Entity("Domain.Entities.ProfileSport", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SportId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -81,6 +89,23 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
+                    b.HasKey("ProfileId", "SportId");
+
+                    b.HasIndex("ProfileId");
+
+                    b.HasIndex("SportId");
+
+                    b.ToTable("ProfileSports", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Sport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -88,7 +113,8 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name");
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Sports", (string)null);
                 });
@@ -159,34 +185,28 @@ namespace Infrastructure.Migrations
                     b.ToTable("UserCredentials", (string)null);
                 });
 
-            modelBuilder.Entity("ProfileSports", b =>
+            modelBuilder.Entity("Domain.Entities.ProfileSport", b =>
                 {
-                    b.Property<Guid>("ProfileId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SportId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("ProfileId", "SportId");
-
-                    b.HasIndex("SportId");
-
-                    b.ToTable("ProfileSports");
-                });
-
-            modelBuilder.Entity("ProfileSports", b =>
-                {
-                    b.HasOne("Domain.Entities.Profile", null)
-                        .WithMany()
+                    b.HasOne("Domain.Entities.Profile", "Profile")
+                        .WithMany("ProfileSports")
                         .HasForeignKey("ProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Sport", null)
+                    b.HasOne("Domain.Entities.Sport", "Sport")
                         .WithMany()
                         .HasForeignKey("SportId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Profile");
+
+                    b.Navigation("Sport");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Profile", b =>
+                {
+                    b.Navigation("ProfileSports");
                 });
 #pragma warning restore 612, 618
         }

@@ -2,7 +2,6 @@
 using Application.Requests;
 using AutoMapper;
 using Domain.Common;
-using Domain.Entities;
 using Domain.Events;
 using Domain.Repositories;
 using Domain.Validators;
@@ -14,6 +13,7 @@ public class CreateProfileUseCase
 {
     private readonly IProfileRepository _profileRepository;
     private readonly IUserRepository _userRepository;
+    private readonly ISportRepository _sportRepository;
     private readonly IDomainEventDispatcher _eventDispatcher;
     private readonly ProfileValidator _profileValidator;
     private readonly IMapper _mapper;
@@ -22,6 +22,7 @@ public class CreateProfileUseCase
     public CreateProfileUseCase(
         IProfileRepository profileRepository,
         IUserRepository userRepository,
+        ISportRepository sportRepository,
         IDomainEventDispatcher eventDispatcher,
         ProfileValidator profileValidator,
         IMapper mapper,
@@ -29,6 +30,7 @@ public class CreateProfileUseCase
     {
         _profileRepository = profileRepository;
         _userRepository = userRepository;
+        _sportRepository = sportRepository;
         _eventDispatcher = eventDispatcher;
         _profileValidator = profileValidator;
         _mapper = mapper;
@@ -59,13 +61,21 @@ public class CreateProfileUseCase
                 request.Age,
                 request.Gender,
                 request.City,
-                request.Bio
+                request.Bio,
+                request.MaxDistance
             );
 
+            // Aggiungi sport al profilo
             foreach (var sportRequest in request.Sports)
             {
-                var sport = new Sport(sportRequest.Name, sportRequest.Level);
-                profile.AddSport(sport);
+                // Verifica che lo sport esista
+                var sport = await _sportRepository.GetByIdAsync(sportRequest.SportId, cancellationToken);
+                if (sport == null)
+                {
+                    return Result<ProfileDto>.Failure($"Sport with ID {sportRequest.SportId} not found");
+                }
+
+                profile.AddSport(sportRequest.SportId, sportRequest.Level);
             }
 
             var validationResult = _profileValidator.Validate(profile);

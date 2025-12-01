@@ -19,13 +19,10 @@ public class SportConfiguration : IEntityTypeConfiguration<Sport>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.Property(s => s.Level)
-            .IsRequired()
-            .HasConversion<int>();
-
         builder.Property(s => s.CreatedAt)
             .IsRequired();
 
-        builder.HasIndex(s => s.Name);
+        builder.HasIndex(s => s.Name)
+            .IsUnique();
     }
 }

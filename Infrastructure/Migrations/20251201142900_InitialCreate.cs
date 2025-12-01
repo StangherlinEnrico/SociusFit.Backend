@@ -22,6 +22,7 @@ namespace Infrastructure.Migrations
                     City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Bio = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     PhotoUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    MaxDistance = table.Column<int>(type: "int", nullable: false, defaultValue: 25),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -36,7 +37,6 @@ namespace Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Level = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -81,7 +81,9 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     ProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    SportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Level = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -117,6 +119,11 @@ namespace Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProfileSports_ProfileId",
+                table: "ProfileSports",
+                column: "ProfileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProfileSports_SportId",
                 table: "ProfileSports",
                 column: "SportId");
@@ -124,7 +131,8 @@ namespace Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Sports_Name",
                 table: "Sports",
-                column: "Name");
+                column: "Name",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserCredentials_UserId",

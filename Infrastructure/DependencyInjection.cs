@@ -6,7 +6,7 @@ using Infrastructure.Caching;
 using Infrastructure.Events;
 using Infrastructure.Events.Handlers;
 using Infrastructure.Persistence;
-using Infrastructure.Persistence.Repositories;
+using Infrastructure.Repositories;
 using Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

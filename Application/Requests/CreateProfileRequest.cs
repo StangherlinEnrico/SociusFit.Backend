@@ -8,11 +8,6 @@ public class CreateProfileRequest
     public string Gender { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string Bio { get; set; } = string.Empty;
-    public List<CreateSportRequest> Sports { get; set; } = new();
-}
-
-public class CreateSportRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public SportLevel Level { get; set; }
+    public int MaxDistance { get; set; } = Domain.Constants.ProfileConstants.DefaultMaxDistance;
+    public List<AddSportRequest> Sports { get; set; } = new();
 }

@@ -1,6 +1,4 @@
-﻿using Domain.Enums;
-
-namespace Application.Requests;
+﻿namespace Application.Requests;
 
 public class UpdateProfileRequest
 {
@@ -8,11 +6,6 @@ public class UpdateProfileRequest
     public string Gender { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string Bio { get; set; } = string.Empty;
-    public List<UpdateSportRequest> Sports { get; set; } = new();
-}
-
-public class UpdateSportRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public SportLevel Level { get; set; }
+    public int MaxDistance { get; set; }
+    public List<AddSportRequest> Sports { get; set; } = new();
 }

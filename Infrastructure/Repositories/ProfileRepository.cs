@@ -1,8 +1,9 @@
 ﻿using Domain.Entities;
 using Domain.Repositories;
+using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Persistence.Repositories;
+namespace Infrastructure.Repositories;
 
 public class ProfileRepository : IProfileRepository
 {
@@ -16,14 +17,14 @@ public class ProfileRepository : IProfileRepository
     public async Task<Profile?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Profiles
-            .Include(p => p.Sports)
+            .Include(p => p.ProfileSports)
             .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
     }
 
     public async Task<Profile?> GetByIdAsync(Guid profileId, CancellationToken cancellationToken = default)
     {
         return await _context.Profiles
-            .Include(p => p.Sports)
+            .Include(p => p.ProfileSports)
             .FirstOrDefaultAsync(p => p.Id == profileId, cancellationToken);
     }
 
@@ -62,7 +63,7 @@ public class ProfileRepository : IProfileRepository
         CancellationToken cancellationToken = default)
     {
         return await _context.Profiles
-            .Include(p => p.Sports)
+            .Include(p => p.ProfileSports)
             .Where(p => profileIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
     }

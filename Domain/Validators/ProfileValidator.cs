@@ -32,10 +32,16 @@ public class ProfileValidator
         else if (profile.Bio.Length > ProfileConstants.MaxBioLength)
             errors.Add($"Bio cannot exceed {ProfileConstants.MaxBioLength} characters");
 
-        if (profile.Sports == null || profile.Sports.Count < ProfileConstants.MinSportsRequired)
+        if (profile.MaxDistance < ProfileConstants.MinMaxDistance)
+            errors.Add($"Max distance must be at least {ProfileConstants.MinMaxDistance} km");
+
+        if (profile.MaxDistance > ProfileConstants.MaxMaxDistance)
+            errors.Add($"Max distance cannot exceed {ProfileConstants.MaxMaxDistance} km");
+
+        if (profile.ProfileSports == null || profile.ProfileSports.Count < ProfileConstants.MinSportsRequired)
             errors.Add($"At least {ProfileConstants.MinSportsRequired} sport is required");
 
-        if (profile.Sports != null && profile.Sports.Count > ProfileConstants.MaxSportsAllowed)
+        if (profile.ProfileSports != null && profile.ProfileSports.Count > ProfileConstants.MaxSportsAllowed)
             errors.Add($"Cannot have more than {ProfileConstants.MaxSportsAllowed} sports");
 
         return errors.Any()

@@ -25,25 +25,15 @@ public class UpdateProfileRequestValidator : AbstractValidator<UpdateProfileRequ
             .MinimumLength(ProfileConstants.MinBioLength).WithMessage($"Bio must be at least {ProfileConstants.MinBioLength} characters")
             .MaximumLength(ProfileConstants.MaxBioLength).WithMessage($"Bio cannot exceed {ProfileConstants.MaxBioLength} characters");
 
+        RuleFor(x => x.MaxDistance)
+            .GreaterThanOrEqualTo(ProfileConstants.MinMaxDistance).WithMessage($"Max distance must be at least {ProfileConstants.MinMaxDistance} km")
+            .LessThanOrEqualTo(ProfileConstants.MaxMaxDistance).WithMessage($"Max distance cannot exceed {ProfileConstants.MaxMaxDistance} km");
+
         RuleFor(x => x.Sports)
             .NotEmpty().WithMessage("At least one sport is required")
             .Must(sports => sports.Count >= ProfileConstants.MinSportsRequired).WithMessage($"At least {ProfileConstants.MinSportsRequired} sport is required")
             .Must(sports => sports.Count <= ProfileConstants.MaxSportsAllowed).WithMessage($"Cannot have more than {ProfileConstants.MaxSportsAllowed} sports");
 
-        RuleForEach(x => x.Sports).SetValidator(new UpdateSportRequestValidator());
-    }
-}
-
-public class UpdateSportRequestValidator : AbstractValidator<UpdateSportRequest>
-{
-    public UpdateSportRequestValidator()
-    {
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Sport name is required")
-            .MinimumLength(SportConstants.MinSportNameLength).WithMessage($"Sport name must be at least {SportConstants.MinSportNameLength} characters")
-            .MaximumLength(SportConstants.MaxSportNameLength).WithMessage($"Sport name cannot exceed {SportConstants.MaxSportNameLength} characters");
-
-        RuleFor(x => x.Level)
-            .IsInEnum().WithMessage("Invalid sport level");
+        RuleForEach(x => x.Sports).SetValidator(new AddSportRequestValidator());
     }
 }
