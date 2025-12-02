@@ -129,17 +129,16 @@ app.UseRequestLogging();
 
 app.UseHttpsRedirection();
 
+// TODO: Serve file statici per foto locali (rimuovere con Azure)
+app.UseStaticFiles();
+
 app.UseCors("AllowAll");
 
 app.UseAuthentication();
-
-// CRITICAL: Add token revocation middleware AFTER authentication
 app.UseTokenRevocationValidation();
-
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.MapHealthChecks("/health");
 
 app.Run();

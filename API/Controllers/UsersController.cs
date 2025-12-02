@@ -13,6 +13,7 @@ public class UsersController : ControllerBase
     private readonly RegisterUserUseCase _registerUseCase;
     private readonly LoginUserUseCase _loginUseCase;
     private readonly LogoutUserUseCase _logoutUseCase;
+    private readonly DeleteAccountUseCase _deleteAccountUseCase;
     private readonly GetUserByIdUseCase _getUserByIdUseCase;
     private readonly ILogger<UsersController> _logger;
 
@@ -20,12 +21,14 @@ public class UsersController : ControllerBase
         RegisterUserUseCase registerUseCase,
         LoginUserUseCase loginUseCase,
         LogoutUserUseCase logoutUseCase,
+        DeleteAccountUseCase deleteAccountUseCase,
         GetUserByIdUseCase getUserByIdUseCase,
         ILogger<UsersController> logger)
     {
         _registerUseCase = registerUseCase;
         _loginUseCase = loginUseCase;
         _logoutUseCase = logoutUseCase;
+        _deleteAccountUseCase = deleteAccountUseCase;
         _getUserByIdUseCase = getUserByIdUseCase;
         _logger = logger;
     }
@@ -110,6 +113,68 @@ public class UsersController : ControllerBase
         }
 
         return Ok(new { message = "Logged out successfully" });
+    }
+
+    /// <summary>
+    /// Delete current user account (permanent)
+    /// </summary>
+    /// <remarks>
+    /// PERMANENTLY deletes the authenticated user's account and ALL associated data:
+    /// - User profile
+    /// - Profile photo (from cloud storage)
+    /// - Sports preferences
+    /// - Credentials (password)
+    /// - All tokens
+    /// 
+    /// This action is IRREVERSIBLE and requires password confirmation.
+    /// 
+    /// After successful deletion, the mobile client should:
+    /// 1. Delete all stored user data
+    /// 2. Clear cache
+    /// 3. Redirect to welcome/registration screen
+    /// 
+    /// GDPR Compliance: User data is permanently removed from all systems.
+    /// </remarks>
+    [HttpDelete("me")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeleteAccount(
+        [FromBody] DeleteAccountRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new ErrorResponse { Errors = new List<string> { "Invalid token" } });
+        }
+
+        // Extract current token for revocation
+        var token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            return BadRequest(new ErrorResponse { Errors = new List<string> { "Token not provided" } });
+        }
+
+        _logger.LogWarning("Account deletion requested for user {UserId}", userId);
+
+        var result = await _deleteAccountUseCase.ExecuteAsync(userId, request, token, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new ErrorResponse { Errors = result.Errors.ToList() });
+        }
+
+        _logger.LogWarning("Account successfully deleted for user {UserId}", userId);
+
+        return Ok(new
+        {
+            message = "Account successfully deleted. All your data has been permanently removed.",
+            deletedAt = DateTime.UtcNow
+        });
     }
 
     /// <summary>

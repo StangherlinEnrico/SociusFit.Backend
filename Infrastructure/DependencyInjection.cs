@@ -69,10 +69,18 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // TODO: Azure Blob Storage - COMMENTATO TEMPORANEAMENTE
+        // Decommentare quando Azure è configurato e commentare l'implementazione locale
+        /*
         services.Configure<AzureBlobStorageSettings>(
             configuration.GetSection("AzureBlobStorageSettings"));
 
         services.AddScoped<IPhotoStorageRepository, AzureBlobPhotoStorageRepository>();
+        */
+
+        // IMPLEMENTAZIONE LOCALE TEMPORANEA (solo per sviluppo)
+        // TODO: Rimuovere quando Azure Blob Storage è configurato
+        services.AddScoped<IPhotoStorageRepository, LocalFilePhotoStorageRepository>();
 
         return services;
     }

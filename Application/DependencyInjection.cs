@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddSingleton<ProfileValidator>();
         services.AddSingleton<SportValidator>();
         services.AddSingleton<PhotoValidator>();
+        services.AddScoped<DeleteAccountRequestValidator>();
 
         return services;
     }
@@ -50,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<LoginUserUseCase>();
         services.AddScoped<GetUserByIdUseCase>();
         services.AddScoped<LogoutUserUseCase>();
+        services.AddScoped<DeleteAccountUseCase>();
 
         services.AddScoped<CreateProfileUseCase>();
         services.AddScoped<GetProfileByUserIdUseCase>();
