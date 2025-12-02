@@ -1,3 +1,4 @@
+using API.BackgroundServices;
 using API.Middleware;
 using Application;
 using Infrastructure;
@@ -33,7 +34,7 @@ builder.Services.AddOpenApi(options =>
         document.Components ??= new();
         document.Components.SecuritySchemes ??= new Dictionary<string, OpenApiSecurityScheme>();
 
-        // Aggiungi lo schema Bearer JWT
+        // Add Bearer JWT schema
         document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.Http,
@@ -42,7 +43,7 @@ builder.Services.AddOpenApi(options =>
             Description = "Enter your JWT token in the format: Bearer {token}"
         });
 
-        // Applica il security requirement globalmente
+        // Apply security requirement globally
         document.SecurityRequirements = new List<OpenApiSecurityRequirement>
         {
             new()
@@ -105,6 +106,9 @@ builder.Services.AddHealthChecks()
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Add Background Services
+builder.Services.AddHostedService<TokenCleanupService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -128,6 +132,10 @@ app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 
 app.UseAuthentication();
+
+// CRITICAL: Add token revocation middleware AFTER authentication
+app.UseTokenRevocationValidation();
+
 app.UseAuthorization();
 
 app.MapControllers();

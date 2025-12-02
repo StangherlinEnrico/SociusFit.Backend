@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<RegisterUserUseCase>();
         services.AddScoped<LoginUserUseCase>();
         services.AddScoped<GetUserByIdUseCase>();
+        services.AddScoped<LogoutUserUseCase>();
 
         services.AddScoped<CreateProfileUseCase>();
         services.AddScoped<GetProfileByUserIdUseCase>();

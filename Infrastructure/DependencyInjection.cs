@@ -45,6 +45,10 @@ public static class DependencyInjection
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<ISportRepository, SportRepository>();
 
+        // Token Management
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IRevokedTokenRepository, RevokedTokenRepository>();
+
         return services;
     }
 

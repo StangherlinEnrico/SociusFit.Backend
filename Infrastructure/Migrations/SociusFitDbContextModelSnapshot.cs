@@ -106,6 +106,43 @@ namespace Infrastructure.Migrations
                     b.ToTable("ProfileSports", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.RevokedToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("RevokedAt");
+
+                    b.HasIndex("TokenId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RevokedTokens", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Sport", b =>
                 {
                     b.Property<Guid>("Id")

@@ -12,17 +12,20 @@ public class UsersController : ControllerBase
 {
     private readonly RegisterUserUseCase _registerUseCase;
     private readonly LoginUserUseCase _loginUseCase;
+    private readonly LogoutUserUseCase _logoutUseCase;
     private readonly GetUserByIdUseCase _getUserByIdUseCase;
     private readonly ILogger<UsersController> _logger;
 
     public UsersController(
         RegisterUserUseCase registerUseCase,
         LoginUserUseCase loginUseCase,
+        LogoutUserUseCase logoutUseCase,
         GetUserByIdUseCase getUserByIdUseCase,
         ILogger<UsersController> logger)
     {
         _registerUseCase = registerUseCase;
         _loginUseCase = loginUseCase;
+        _logoutUseCase = logoutUseCase;
         _getUserByIdUseCase = getUserByIdUseCase;
         _logger = logger;
     }
@@ -67,28 +70,43 @@ public class UsersController : ControllerBase
     /// Logout current user
     /// </summary>
     /// <remarks>
-    /// Logs out the current authenticated user. 
-    /// With stateless JWT, this endpoint primarily serves for:
-    /// - Analytics tracking (user logout events)
-    /// - Audit logging for security
-    /// - Future token blacklist implementation (when refresh tokens are added)
+    /// Logs out the authenticated user by revoking the current JWT token.
+    /// The token is added to a server-side blacklist, preventing its further use.
     /// 
-    /// The mobile client should delete the stored JWT token after calling this endpoint.
+    /// After calling this endpoint, the mobile client should:
+    /// 1. Delete the stored JWT token from secure storage
+    /// 2. Clear any cached user data
+    /// 3. Redirect to the login screen
+    /// 
+    /// The revoked token will remain in the blacklist until it expires naturally.
     /// </remarks>
     [HttpPost("logout")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    public IActionResult Logout()
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            _logger.LogInformation("User {UserId} logged out at {Timestamp}", userId, DateTime.UtcNow);
+            return Unauthorized(new ErrorResponse { Errors = new List<string> { "Invalid token" } });
+        }
 
-            // Future: Add token to blacklist if refresh token system is implemented
-            // await _tokenBlacklistService.AddToBlacklistAsync(token, cancellationToken);
+        // Extract token from Authorization header
+        var token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            return BadRequest(new ErrorResponse { Errors = new List<string> { "Token not provided" } });
+        }
+
+        var result = await _logoutUseCase.ExecuteAsync(token, userId, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new ErrorResponse { Errors = result.Errors.ToList() });
         }
 
         return Ok(new { message = "Logged out successfully" });

@@ -36,6 +36,22 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RevokedTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TokenId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RevokedTokens", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sports",
                 columns: table => new
                 {
@@ -168,6 +184,27 @@ namespace Infrastructure.Migrations
                 column: "SportId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RevokedTokens_ExpiresAt",
+                table: "RevokedTokens",
+                column: "ExpiresAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RevokedTokens_RevokedAt",
+                table: "RevokedTokens",
+                column: "RevokedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RevokedTokens_TokenId",
+                table: "RevokedTokens",
+                column: "TokenId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RevokedTokens_UserId",
+                table: "RevokedTokens",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Sports_Name",
                 table: "Sports",
                 column: "Name",
@@ -191,6 +228,9 @@ namespace Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "ProfileSports");
+
+            migrationBuilder.DropTable(
+                name: "RevokedTokens");
 
             migrationBuilder.DropTable(
                 name: "UserCredentials");
