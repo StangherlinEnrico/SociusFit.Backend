@@ -7,6 +7,8 @@ public class ProfileDto
     public int Age { get; set; }
     public string Gender { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
+    public double Latitude { get; set; } // Calcolato dal backend
+    public double Longitude { get; set; } // Calcolato dal backend
     public string Bio { get; set; } = string.Empty;
     public string? PhotoUrl { get; set; }
     public int MaxDistance { get; set; }

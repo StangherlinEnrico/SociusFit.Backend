@@ -4,6 +4,7 @@ using AutoMapper;
 using Domain.Common;
 using Domain.Events;
 using Domain.Repositories;
+using Domain.Services;
 using Domain.Validators;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,7 @@ public class UpdateProfileUseCase
 {
     private readonly IProfileRepository _profileRepository;
     private readonly ISportRepository _sportRepository;
+    private readonly IGeocodingService _geocodingService;
     private readonly IDomainEventDispatcher _eventDispatcher;
     private readonly ProfileValidator _profileValidator;
     private readonly IMapper _mapper;
@@ -21,6 +23,7 @@ public class UpdateProfileUseCase
     public UpdateProfileUseCase(
         IProfileRepository profileRepository,
         ISportRepository sportRepository,
+        IGeocodingService geocodingService,
         IDomainEventDispatcher eventDispatcher,
         ProfileValidator profileValidator,
         IMapper mapper,
@@ -28,6 +31,7 @@ public class UpdateProfileUseCase
     {
         _profileRepository = profileRepository;
         _sportRepository = sportRepository;
+        _geocodingService = geocodingService;
         _eventDispatcher = eventDispatcher;
         _profileValidator = profileValidator;
         _mapper = mapper;
@@ -47,8 +51,36 @@ public class UpdateProfileUseCase
                 return Result<ProfileDto>.Failure("Profile not found");
             }
 
-            // Aggiorna le info base
-            profile.UpdateBasicInfo(request.Age, request.Gender, request.City, request.Bio);
+            double latitude = profile.Latitude;
+            double longitude = profile.Longitude;
+
+            // GEOCODING: Se la città è cambiata, ricalcola le coordinate
+            if (profile.City != request.City)
+            {
+                _logger.LogInformation("City changed from {OldCity} to {NewCity} for user {UserId}. Geocoding...",
+                    profile.City, request.City, userId);
+
+                var coordinates = await _geocodingService.GetCoordinatesAsync(request.City, cancellationToken);
+
+                if (coordinates == null)
+                {
+                    return Result<ProfileDto>.Failure($"Unable to geocode city: {request.City}. Please check the city name format.");
+                }
+
+                (latitude, longitude) = coordinates.Value;
+
+                _logger.LogInformation("Successfully geocoded {NewCity} to ({Latitude}, {Longitude})",
+                    request.City, latitude, longitude);
+            }
+
+            // Aggiorna le info base (includendo coordinate se necessario)
+            profile.UpdateBasicInfo(
+                request.Age,
+                request.Gender,
+                request.City,
+                latitude,
+                longitude,
+                request.Bio);
 
             // Aggiorna la distanza massima
             profile.UpdateMaxDistance(request.MaxDistance);
@@ -58,7 +90,6 @@ public class UpdateProfileUseCase
 
             foreach (var sportRequest in request.Sports)
             {
-                // Verifica che lo sport esista
                 var sport = await _sportRepository.GetByIdAsync(sportRequest.SportId, cancellationToken);
                 if (sport == null)
                 {

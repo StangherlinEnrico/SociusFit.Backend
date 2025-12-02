@@ -1,12 +1,14 @@
 ﻿using Domain.Common;
 using Domain.Events;
 using Domain.Repositories;
+using Domain.Services;
 using Infrastructure.Authentication;
 using Infrastructure.Caching;
 using Infrastructure.Events;
 using Infrastructure.Events.Handlers;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
+using Infrastructure.Services;
 using Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -103,6 +105,8 @@ public static class DependencyInjection
         services.AddScoped<IDomainEventHandler<UserCreatedEvent>, UserCreatedEventHandler>();
         services.AddScoped<IDomainEventHandler<ProfileCreatedEvent>, ProfileCreatedEventHandler>();
         services.AddScoped<IDomainEventHandler<ProfileCompletedEvent>, ProfileCompletedEventHandler>();
+
+        services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();
 
         return services;
     }

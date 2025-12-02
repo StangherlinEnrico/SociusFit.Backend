@@ -64,6 +64,37 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Logout current user
+    /// </summary>
+    /// <remarks>
+    /// Logs out the current authenticated user. 
+    /// With stateless JWT, this endpoint primarily serves for:
+    /// - Analytics tracking (user logout events)
+    /// - Audit logging for security
+    /// - Future token blacklist implementation (when refresh tokens are added)
+    /// 
+    /// The mobile client should delete the stored JWT token after calling this endpoint.
+    /// </remarks>
+    [HttpPost("logout")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public IActionResult Logout()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogInformation("User {UserId} logged out at {Timestamp}", userId, DateTime.UtcNow);
+
+            // Future: Add token to blacklist if refresh token system is implemented
+            // await _tokenBlacklistService.AddToBlacklistAsync(token, cancellationToken);
+        }
+
+        return Ok(new { message = "Logged out successfully" });
+    }
+
+    /// <summary>
     /// Get user by ID
     /// </summary>
     [HttpGet("{id}")]

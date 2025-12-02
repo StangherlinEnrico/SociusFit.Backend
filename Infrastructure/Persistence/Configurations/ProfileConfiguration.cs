@@ -29,6 +29,14 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(p => p.Latitude)
+            .IsRequired()
+            .HasColumnType("decimal(10,7)"); // Precisione sufficiente per coordinate GPS
+
+        builder.Property(p => p.Longitude)
+            .IsRequired()
+            .HasColumnType("decimal(10,7)");
+
         builder.Property(p => p.Bio)
             .IsRequired()
             .HasMaxLength(500);
@@ -52,6 +60,9 @@ public class ProfileConfiguration : IEntityTypeConfiguration<Profile>
         builder.HasIndex(p => p.City);
 
         builder.HasIndex(p => p.Age);
+
+        // Indici spaziali per query geografiche efficienti
+        builder.HasIndex(p => new { p.Latitude, p.Longitude });
 
         // La relazione con ProfileSport è gestita da ProfileSportConfiguration
         builder.HasMany(p => p.ProfileSports)

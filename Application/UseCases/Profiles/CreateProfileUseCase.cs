@@ -2,8 +2,10 @@
 using Application.Requests;
 using AutoMapper;
 using Domain.Common;
+using Domain.Entities;
 using Domain.Events;
 using Domain.Repositories;
+using Domain.Services;
 using Domain.Validators;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +16,7 @@ public class CreateProfileUseCase
     private readonly IProfileRepository _profileRepository;
     private readonly IUserRepository _userRepository;
     private readonly ISportRepository _sportRepository;
+    private readonly IGeocodingService _geocodingService;
     private readonly IDomainEventDispatcher _eventDispatcher;
     private readonly ProfileValidator _profileValidator;
     private readonly IMapper _mapper;
@@ -23,6 +26,7 @@ public class CreateProfileUseCase
         IProfileRepository profileRepository,
         IUserRepository userRepository,
         ISportRepository sportRepository,
+        IGeocodingService geocodingService,
         IDomainEventDispatcher eventDispatcher,
         ProfileValidator profileValidator,
         IMapper mapper,
@@ -31,6 +35,7 @@ public class CreateProfileUseCase
         _profileRepository = profileRepository;
         _userRepository = userRepository;
         _sportRepository = sportRepository;
+        _geocodingService = geocodingService;
         _eventDispatcher = eventDispatcher;
         _profileValidator = profileValidator;
         _mapper = mapper;
@@ -56,11 +61,24 @@ public class CreateProfileUseCase
                 return Result<ProfileDto>.Failure("Profile already exists for this user");
             }
 
+            // GEOCODING: Ottieni coordinate dalla città
+            var coordinates = await _geocodingService.GetCoordinatesAsync(request.City, cancellationToken);
+
+            if (coordinates == null)
+            {
+                return Result<ProfileDto>.Failure($"Unable to geocode city: {request.City}. Please check the city name format.");
+            }
+
+            var (latitude, longitude) = coordinates.Value;
+
+            // Crea profilo con coordinate geocodificate
             var profile = new Domain.Entities.Profile(
                 userId,
                 request.Age,
                 request.Gender,
                 request.City,
+                latitude,
+                longitude,
                 request.Bio,
                 request.MaxDistance
             );
@@ -68,7 +86,6 @@ public class CreateProfileUseCase
             // Aggiungi sport al profilo
             foreach (var sportRequest in request.Sports)
             {
-                // Verifica che lo sport esista
                 var sport = await _sportRepository.GetByIdAsync(sportRequest.SportId, cancellationToken);
                 if (sport == null)
                 {
@@ -93,7 +110,8 @@ public class CreateProfileUseCase
 
             var profileDto = _mapper.Map<ProfileDto>(savedProfile);
 
-            _logger.LogInformation("Profile created successfully: {ProfileId} for user {UserId}", savedProfile.Id, userId);
+            _logger.LogInformation("Profile created successfully: {ProfileId} for user {UserId} in {City} (geocoded to {Latitude}, {Longitude})",
+                savedProfile.Id, userId, request.City, latitude, longitude);
 
             return Result<ProfileDto>.Success(profileDto);
         }

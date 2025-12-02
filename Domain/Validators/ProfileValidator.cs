@@ -25,6 +25,13 @@ public class ProfileValidator
         else if (profile.City.Length > ProfileConstants.MaxCityLength)
             errors.Add($"City cannot exceed {ProfileConstants.MaxCityLength} characters");
 
+        // Validazione coordinate (calcolate internamente dal geocoding service)
+        if (profile.Latitude < ProfileConstants.MinLatitude || profile.Latitude > ProfileConstants.MaxLatitude)
+            errors.Add($"Latitude must be between {ProfileConstants.MinLatitude} and {ProfileConstants.MaxLatitude}");
+
+        if (profile.Longitude < ProfileConstants.MinLongitude || profile.Longitude > ProfileConstants.MaxLongitude)
+            errors.Add($"Longitude must be between {ProfileConstants.MinLongitude} and {ProfileConstants.MaxLongitude}");
+
         if (string.IsNullOrWhiteSpace(profile.Bio))
             errors.Add("Bio is required");
         else if (profile.Bio.Length < ProfileConstants.MinBioLength)

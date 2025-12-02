@@ -1,4 +1,5 @@
 ﻿using Domain.Enums;
+using Domain.Services;
 
 namespace Domain.Entities;
 
@@ -8,10 +9,12 @@ public class Profile
     public Guid UserId { get; private set; }
     public int Age { get; private set; }
     public string Gender { get; private set; }
-    public string City { get; private set; }
+    public string City { get; private set; } // Formato: "Comune (Regione)" es: "Castello di Godego (Veneto)"
+    public double Latitude { get; private set; }
+    public double Longitude { get; private set; }
     public string Bio { get; private set; }
     public string? PhotoUrl { get; private set; }
-    public int MaxDistance { get; private set; } // Distanza massima in km
+    public int MaxDistance { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
@@ -20,23 +23,41 @@ public class Profile
 
     private Profile() { }
 
-    public Profile(Guid userId, int age, string gender, string city, string bio, int maxDistance = Constants.ProfileConstants.DefaultMaxDistance)
+    public Profile(
+        Guid userId,
+        int age,
+        string gender,
+        string city,
+        double latitude,
+        double longitude,
+        string bio,
+        int maxDistance = Constants.ProfileConstants.DefaultMaxDistance)
     {
         Id = Guid.NewGuid();
         UserId = userId;
         Age = age;
         Gender = gender;
         City = city;
+        Latitude = latitude;
+        Longitude = longitude;
         Bio = bio;
         MaxDistance = maxDistance;
         CreatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateBasicInfo(int age, string gender, string city, string bio)
+    public void UpdateBasicInfo(
+        int age,
+        string gender,
+        string city,
+        double latitude,
+        double longitude,
+        string bio)
     {
         Age = age;
         Gender = gender;
         City = city;
+        Latitude = latitude;
+        Longitude = longitude;
         Bio = bio;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -94,8 +115,31 @@ public class Profile
         return Age >= 18
                && !string.IsNullOrWhiteSpace(Gender)
                && !string.IsNullOrWhiteSpace(City)
+               && Latitude != 0
+               && Longitude != 0
                && !string.IsNullOrWhiteSpace(Bio)
                && _profileSports.Any()
                && !string.IsNullOrWhiteSpace(PhotoUrl);
+    }
+
+    /// <summary>
+    /// Calcola la distanza in km tra questo profilo e un altro usando la formula di Haversine
+    /// </summary>
+    public double CalculateDistanceKm(Profile otherProfile)
+    {
+        return DistanceCalculator.CalculateDistanceKm(
+            this.Latitude,
+            this.Longitude,
+            otherProfile.Latitude,
+            otherProfile.Longitude);
+    }
+
+    /// <summary>
+    /// Verifica se un altro profilo è entro la distanza massima configurata
+    /// </summary>
+    public bool IsWithinRange(Profile otherProfile)
+    {
+        var distance = CalculateDistanceKm(otherProfile);
+        return distance <= this.MaxDistance;
     }
 }
