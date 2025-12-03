@@ -14,6 +14,34 @@ namespace Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Likes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LikerUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LikedUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Likes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Matches",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    User1Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    User2Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Matches", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Profiles",
                 columns: table => new
                 {
@@ -153,6 +181,37 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Likes_LikedUserId",
+                table: "Likes",
+                column: "LikedUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Likes_LikerUserId",
+                table: "Likes",
+                column: "LikerUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Likes_LikerUserId_LikedUserId",
+                table: "Likes",
+                columns: new[] { "LikerUserId", "LikedUserId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Matches_CreatedAt",
+                table: "Matches",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Matches_User1Id",
+                table: "Matches",
+                column: "User1Id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Matches_User2Id",
+                table: "Matches",
+                column: "User2Id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Profiles_Age",
                 table: "Profiles",
                 column: "Age");
@@ -226,6 +285,12 @@ namespace Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Likes");
+
+            migrationBuilder.DropTable(
+                name: "Matches");
+
             migrationBuilder.DropTable(
                 name: "ProfileSports");
 

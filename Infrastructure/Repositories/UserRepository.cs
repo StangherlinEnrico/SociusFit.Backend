@@ -32,6 +32,13 @@ public class UserRepository : IUserRepository
             .AnyAsync(u => u.Email.ToLower() == email.ToLower(), cancellationToken);
     }
 
+    public async Task<List<User>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Where(u => u.ProfileComplete)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<User> CreateAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);

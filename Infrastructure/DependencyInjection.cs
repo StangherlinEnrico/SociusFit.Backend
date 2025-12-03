@@ -49,6 +49,9 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRevokedTokenRepository, RevokedTokenRepository>();
 
+        services.AddScoped<ILikeRepository, LikeRepository>();
+        services.AddScoped<IMatchRepository, MatchRepository>();
+
         return services;
     }
 

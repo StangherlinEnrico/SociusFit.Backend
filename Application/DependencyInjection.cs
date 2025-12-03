@@ -1,4 +1,6 @@
-﻿using Application.UseCases.Profiles;
+﻿using Application.UseCases.Discovery;
+using Application.UseCases.Matches;
+using Application.UseCases.Profiles;
 using Application.UseCases.Users;
 using Application.Validators;
 using Domain.Validators;
@@ -57,6 +59,10 @@ public static class DependencyInjection
         services.AddScoped<GetProfileByUserIdUseCase>();
         services.AddScoped<UpdateProfileUseCase>();
         services.AddScoped<UploadProfilePhotoUseCase>();
+
+        services.AddScoped<GetDiscoveryCardsUseCase>();
+        services.AddScoped<SwipeLikeUseCase>();
+        services.AddScoped<GetMatchesUseCase>();
 
         return services;
     }
