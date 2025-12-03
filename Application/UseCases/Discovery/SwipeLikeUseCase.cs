@@ -3,6 +3,7 @@ using Application.Responses;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Repositories;
+using Domain.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Application.UseCases.Discovery;
@@ -12,17 +13,20 @@ public class SwipeLikeUseCase
     private readonly ILikeRepository _likeRepository;
     private readonly IMatchRepository _matchRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<SwipeLikeUseCase> _logger;
 
     public SwipeLikeUseCase(
         ILikeRepository likeRepository,
         IMatchRepository matchRepository,
         IUserRepository userRepository,
+        INotificationService notificationService,
         ILogger<SwipeLikeUseCase> logger)
     {
         _likeRepository = likeRepository;
         _matchRepository = matchRepository;
         _userRepository = userRepository;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -66,6 +70,16 @@ public class SwipeLikeUseCase
                     "Match created between {User1Id} and {User2Id}",
                     currentUserId,
                     request.LikedUserId);
+
+                var currentUser = await _userRepository.GetByIdAsync(currentUserId, cancellationToken);
+                if (currentUser != null)
+                {
+                    await _notificationService.SendMatchNotificationAsync(
+                        request.LikedUserId,
+                        currentUser.FirstName,
+                        match.Id,
+                        cancellationToken);
+                }
 
                 return Result<SwipeLikeResponse>.Success(new SwipeLikeResponse
                 {

@@ -1,6 +1,7 @@
 ﻿using Application.UseCases.Chat;
 using Application.UseCases.Discovery;
 using Application.UseCases.Matches;
+using Application.UseCases.Notifications;
 using Application.UseCases.Profiles;
 using Application.UseCases.Users;
 using Application.Validators;
@@ -69,6 +70,8 @@ public static class DependencyInjection
         services.AddScoped<GetMessagesUseCase>();
         services.AddScoped<GetConversationsUseCase>();
         services.AddScoped<MarkMessagesAsReadUseCase>();
+
+        services.AddScoped<RegisterDeviceTokenUseCase>();
 
         return services;
     }

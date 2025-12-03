@@ -54,6 +54,10 @@ public static class DependencyInjection
 
         services.AddScoped<IMessageRepository, MessageRepository>();
 
+        services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationService, NotificationService>();
+
         return services;
     }
 

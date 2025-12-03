@@ -20,6 +20,9 @@ public class SociusFitDbContext : DbContext
     public DbSet<Like> Likes { get; set; } = null!;
     public DbSet<Match> Matches { get; set; } = null!;
     public DbSet<Message> Messages { get; set; } = null!;
+    public DbSet<DeviceToken> DeviceTokens { get; set; } = null!;
+    public DbSet<Notification> Notifications { get; set; } = null!;
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
