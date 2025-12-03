@@ -42,6 +42,22 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Messages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SenderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Messages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Profiles",
                 columns: table => new
                 {
@@ -212,6 +228,21 @@ namespace Infrastructure.Migrations
                 column: "User2Id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Messages_MatchId",
+                table: "Messages",
+                column: "MatchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_MatchId_SentAt",
+                table: "Messages",
+                columns: new[] { "MatchId", "SentAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_SenderId",
+                table: "Messages",
+                column: "SenderId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Profiles_Age",
                 table: "Profiles",
                 column: "Age");
@@ -290,6 +321,9 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Matches");
+
+            migrationBuilder.DropTable(
+                name: "Messages");
 
             migrationBuilder.DropTable(
                 name: "ProfileSports");

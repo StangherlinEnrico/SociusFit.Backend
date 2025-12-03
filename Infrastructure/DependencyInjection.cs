@@ -52,6 +52,8 @@ public static class DependencyInjection
         services.AddScoped<ILikeRepository, LikeRepository>();
         services.AddScoped<IMatchRepository, MatchRepository>();
 
+        services.AddScoped<IMessageRepository, MessageRepository>();
+
         return services;
     }
 

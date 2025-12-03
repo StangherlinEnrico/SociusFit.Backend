@@ -13,5 +13,7 @@ public class MappingProfile : AutoMapper.Profile
             .ForMember(dest => dest.MaxDistance, opt => opt.MapFrom(src => src.MaxDistance));
 
         CreateMap<Sport, SportDto>();
+
+        CreateMap<Message, MessageDto>();
     }
 }

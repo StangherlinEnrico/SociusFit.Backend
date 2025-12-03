@@ -1,4 +1,5 @@
-﻿using Application.UseCases.Discovery;
+﻿using Application.UseCases.Chat;
+using Application.UseCases.Discovery;
 using Application.UseCases.Matches;
 using Application.UseCases.Profiles;
 using Application.UseCases.Users;
@@ -63,6 +64,11 @@ public static class DependencyInjection
         services.AddScoped<GetDiscoveryCardsUseCase>();
         services.AddScoped<SwipeLikeUseCase>();
         services.AddScoped<GetMatchesUseCase>();
+
+        services.AddScoped<SendMessageUseCase>();
+        services.AddScoped<GetMessagesUseCase>();
+        services.AddScoped<GetConversationsUseCase>();
+        services.AddScoped<MarkMessagesAsReadUseCase>();
 
         return services;
     }

@@ -19,6 +19,7 @@ public class SociusFitDbContext : DbContext
     public DbSet<RevokedToken> RevokedTokens { get; set; }
     public DbSet<Like> Likes { get; set; } = null!;
     public DbSet<Match> Matches { get; set; } = null!;
+    public DbSet<Message> Messages { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
